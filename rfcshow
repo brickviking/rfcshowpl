@@ -357,9 +357,40 @@ sub HelpMe
 
 # Purpose: Perform search stuff
 # Usage: SearchDialog(TYPE?);
-sub SearchDialog
+sub SearchDialog2
 {
 	STUB();
+}
+
+# Purpose: blank Search dialog while I (ecg) hack and cut code
+# Usage: SearchDialog(TYPE);
+sub SearchDialog
+{
+	my $searchType = $_[0] ? $_[0] : '';
+	my $searchTerm;
+	# Currently stubbed.
+	# What should happen here is: (case switch on $searchType)
+	# If $1 is blank, bring up a search dialog prompting for term
+	# If $1 is REPEAT, search for the next occurence of term
+	# If $1 is INDEX, search in the rfc-index for the requested term.
+	# If $1 is ALL, search in the total rfc store for the requested term.
+	# I should stuff any result into $searchterm
+	# so I can use it for the next invocation
+	my $ret = GetInput('Search','Input term to search for',
+		sub
+		{
+			my $file = shift;
+			RSInfo('Entering',"You entered $file");
+		}
+	);
+	if ($ret)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 # Purpose: Download files
