@@ -382,6 +382,7 @@ sub InitMain
 	# Possible entries
 	my @PossibleEntries;
 	push(@PossibleEntries,'/usr/share/doc/rfc');
+	push(@PossibleEntries,'/usr/local/share/doc/rfc');
 	push(@PossibleEntries,$ENV{HOME}.'/rfcshow');
 	push(@PossibleEntries,$ENV{HOME}.'/rfcs');
 	# Populate @Directories
