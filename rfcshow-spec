@@ -1,0 +1,128 @@
+Rfcshow should do the following:
+* provide a standard user GUI, with window and menus for interaction
+  + Menu should probably follow the usual <File> <Edit> <Help>
+* fetch documents from site either with ftp or http
+* update local store of documents from site.
+* store and compress successfully downloaded documents
+* uncompress and display user-selected documents
+* search index for terms, displaying a list of matches.
+  + I have a rudimentary perl search routine that displays an entry
+    from the index.
+
+Requirements
+------------
+Some rfc docs, from ftp://ftp.rfc-editor.org/in-notes/
+The rfc-index.txt and rfcxx00.txt from above site.
+
+Tarballs can be fetched from ftp://ftp.rfc-editor.org/in-notes/tar
+
+
+Menus
+=====
+:  <F>ile, <E>dit, <G>rab, <H>elp
+File:  Open, Exit
+Edit:  Search, Repeat Search, Search in Index, Search All
+Grab:  All Latest, one, Index
+Help:  Contents, About
+
+Approximation of window
+=======================
+
+,--------------------------------------------------------------------.
+| File   Edit     Grab       Help                                    |
++--------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|     main content window                                            |
+|                                                                    |
+|                                                                    |
++--------------------------------------------------------------------+
+| <status area>                                                      |
+`--------------------------------------------------------------------'
+
+
+,--------------------------------------------------------------------.
+| File   Edit     Grab       Help                                    |
+| Open
+| Exit
+
+
+,--------------------------------------------------------------------.
+| File   Edit     Grab       Help                                    |
+|        Search
+|        Repeat
+|        Search Index
+|        Search All
+
+,--------------------------------------------------------------------.
+| File   Edit     Grab       Help                                    |
+|                 Latest
+|                 Single
+|                 Index
+|                 Bunch
+
+,--------------------------------------------------------------------.
+| File   Edit     Grab       Help                                    |
+|                            Contents
+|                            About
+
+
+General Structure of program flow:
+----------------------------------
+App starts, opens up rfc-index, displays in content window. Displays splash on
+top (HelpAbout), user presses any key to dismiss About box.
+
+
+Functions:
+
+FileOpen:  Opens specific RFC number, rfcxx00; or rfc-index.
+FileNext:  Opens next in sequence
+FileExit:  Does what you think
+
+EditSearch:  Asks for term, searches in current open document, seeks to term if
+             found.
+EditRepeat:  Repeats search (like, huh?)
+EditSearchIndex: Asks for term, opens Index in main window, and does what
+                 EditSearch does.
+EditSearchAll:  Asks for term (we could use status bar for this) and searches
+             through local store of RFC docs for that term. Returns a list
+             of RFC documents that hit, in a checklist the user can select
+             elements of. Display these hits in sequential order, or from
+             menu. (Warn user it's heavy on I/O and time)
+
+GrabLatest:  Downloads all docs you don't already have on local store,
+             including rfc-index, rfcxx00
+GrabSingle:  Downloads individual doc (with the option of refreshing your copy
+             if you have it already)
+GrabIndex:   Downloads rfc-index.txt
+GrabBunch:   Downloads tarballs (rfc0500-1000.txt or whatever, explanation
+             later), and extracts into store dir, compresses each doc.
+
+HelpContents: Describes how to use program (I can probably write this)
+HelpAbout:    This is RFCShow, version whatever, date whatever, author whomever.
+
+Filestorage
+===========
+
+Files will get downloaded to either a global dir, or a local dir under user's
+$HOME. Program ought to look in both places, but only download to writable
+places.  Once textfiles are downloaded, compress for space. Uncompress docs into
+tempspace to display to user.
+
+Downloading
+-----------
+Use either wget, curl, or ncftp. If possible, support for all three.  Provide
+for status of downloading (bytes down, %done) in status bar.
+
+First Startup:
+==============
+We'll have to look for download programs (wget, et al), possibly create a
+.rfcgetrc in user dir, and stuff vars in there. Look in /usr/share/doc/rfc
+first, then ask user if (s)he wishes to use a local dir if we DON'T find a
+writable /usr/share/doc/rfc.
+Download rfc-index.txt ,rfcxx00.txt and rfc-ref.txt from ftp site:
+  ftp://ftp.rfc-editor.org/in-notes/
+That link can get stored into .rfcshowrc as place to get further docs from.
+Tarballs I've already described where to get from.
+
+

@@ -1,0 +1,492 @@
+#!/usr/bin/perl
+# rfcshow
+# Copyright (C) Eskild Hustvedt 2008, 2009
+# Written for Eric Gillespie, according to his spec.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+use strict;
+use warnings;
+
+use Curses::UI;
+use Curses;
+use constant { true => 1, false => 0 };
+use Getopt::Long;
+
+my $VERSION = '0.1 Alpha';
+my $rootWindow;
+my $MainWidget;
+my $MenuWidget;
+my $RFCSource = 'ftp://ftp.rfc-editor.org/in-notes/';
+my $RFCPrefix = 'rfc';
+my $RFCSuffix = '.txt';
+my $confFile = $ENV{HOME}.'/.rfcshowrc';
+my @Directories;
+
+# Config with default values
+my %config = (
+	col_fg => 'white',
+	col_bg => 'blue',
+	source_add => 'ftp://ftp.rfc-editor.org/in-notes/',
+	file_prefix => 'rfc',
+	file_suffix => 'txt',
+	ignore_startup_dialog => 'false',
+);
+
+# Purpose: Write the RFCShow rc file
+# Usage: WriteRFCShowRC();
+sub WriteRFCShowRC
+{
+	my %configInfo = (
+		HEADER => 'RFCShow RC file',
+		col_fg => 'The foreground colour (default: white)',
+		col_bg => 'The background colour (default: blue)',
+		source_add => 'The RFC source address (default: ftp://ftp.rfc-editor.org/in-notes/)',
+		file_prefix => 'The prefix of the files on the server (default: rfc)',
+		file_suffix => 'The suffix of the files on the server (default: .txt)',
+		ignore_startup_dialog => 'Set to true to skip the about dialog on startup',
+	);
+	WriteConfigFile($confFile, \%config, \%configInfo);
+}
+
+# Purpose: LOad the RFCShow rc file
+# Usage: LoadRFCShowRC();
+sub LoadRFCShowRC
+{
+	my $colours = '^(black|red|green|yellow|blue|magneta|cyan|white)$';
+	my $bool = '^(true|false)$';
+
+	my %OptionRegexHash = (
+		col_fg => $colours,
+		col_bg => $colours,
+		source_add => '.+',
+		file_prefix => '.*',
+		file_suffix => '.*',
+		ignore_startup_dialog => $bool,
+	);
+	LoadConfigFile($confFile,\%config,\%OptionRegexHash,true);
+	if ($config{col_bg} eq $config{col_fg})
+	{
+		RSIntWarn("col_bg equals col_fg. You won't be able to see anything! Falling back to defaults");
+		$config{col_bg} = 'blue';
+		$config{col_fg} = 'white';
+	}
+}
+
+# Purpose: Output a internal warning
+# Usage: RSIntWarn(TEXT);
+sub RSIntWarn
+{
+	$rootWindow->leave_curses() if $rootWindow;
+	warn("RFCShow: $_[0]\n");
+	$rootWindow->reset_curses() if $rootWindow;
+}
+
+# Purpose: Display an 'ok' box
+# Usage: RSInfo(Title,text);
+sub RSInfo
+{
+	my $title = shift;
+	my $text = shift;
+	$rootWindow->dialog(
+		-title     => $title,
+		-buttons   => ['ok'],
+		-message => $text,
+		-tbg => $config{col_fg},
+		-tfg => $config{col_bg},
+		-bg => $config{col_bg},
+		-fg => $config{col_fg},
+		-bbg => $config{col_bg},
+		-bfg => $config{col_fg},
+	);
+}
+
+# Purpose: Display an yes/no box
+# Usage: RSQuestion(Title,text);
+# Returns true on yes, false on no.
+sub RSQuestion
+{
+	my $title = $_[0] ? $_[0] : 'Untitled';
+	my $text = $_[1] ? $_[1] : 'Text';
+	my $ret = $rootWindow->dialog(
+		-title     => $title,
+		-buttons   => ['Yes','No'],
+		-message => $text,
+		-tbg => $config{col_fg},
+		-tfg => $config{col_bg},
+		-bg => $config{col_bg},
+		-fg => $config{col_fg},
+		-bbg => $config{col_bg},
+		-bfg => $config{col_fg},
+	);
+	if ($ret)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+# Purpose: Create a utility window
+# Usage: my $utilWin = getNewUtilWin('TITLE', parent?, width?, height?);
+#	Parent, width and height can be undef/omitted and will then use a sane default.
+#	If called in array context, will return (win, ID) instead of just win.
+sub getNewUtilWin
+{
+	my $title = $_[0] ? $_[0] : 'Untitled';
+	my $parent = $_[1] ? $_[1] : $rootWindow;
+	my $width = $_[2] ? $_[2] : 70;
+	my $height = $_[3] ? $_[3] : 15;
+
+	my $ID = int(rand(1000000)).time().$width.$height;
+	my $win = $rootWindow->add($ID,
+		'Window',
+		'-title' => $title,
+		'-height' => $height,
+		'-width' => $width,
+		'-border' => 1,
+		'-centered' => 1,
+		-tbg => $config{col_fg},
+		-tfg => $config{col_bg},
+		-bg => $config{col_bg},
+		-fg => $config{col_fg},
+		-bbg => $config{col_bg},
+		-bfg => $config{col_fg},
+		'-parent' => $parent,
+	);
+	if(wantarray())
+	{
+		return($win,$ID);
+	}
+	else
+	{
+		return($win);
+	}
+}
+
+# Purpose: Create a prompt dialog, return contents
+# Usage: GetInput('title','prompt text', \&CallBack);
+#	This sub does not block for input, so you need to include a callback
+#	which will be called with the contents of the input.
+#	It will not do *anything* if the user selects cancel.
+sub GetInput
+{
+	my $title = $_[0] ? $_[0] : 'Untitled';
+	my $text = $_[1] ? $_[1] : 'This is a prompt';
+	my ($width,$height);
+	# Try to be clever calculating width and height,
+	# but only when text has no newlines.
+	if(not $text =~ /\n/)
+	{
+		$width = length($text) + 4;
+		$height = 7;
+	}
+	else
+	{
+		RSIntWarn("text to GetInput() contained newlines. This might spell trouble.");
+	}
+	my ($win,$ID) = getNewUtilWin($title,undef,$width,$height);
+	my $label = $win->add($ID.'label',
+		'Label',
+		-width => -1,
+		'-text' => $text,
+		'-y' => 1,
+		-bg => $config{col_bg},
+		-fg => $config{col_fg},
+	);
+	my $textentry = $win->add($ID.'entry',
+		'TextEntry',
+		-sbborder => 1,
+		'-y' => 2,
+	);
+	my $buttons = $win->add($ID.'button',
+		'Buttonbox',
+		-buttons   => [
+		{
+			-label => '< Accept >',
+			-value => 1,
+			-shortcut => 1,
+		},
+		'cancel',
+		],
+		'-y' => 3,
+		'-centered' => 1,
+	);
+
+
+	$textentry->focus();
+	my $rtext = $textentry->get();
+}
+
+# Purpose: Write a configuration file
+# Usage: WriteConfigFile(/FILE, \%ConfigHash, \%ExplanationHash);
+sub WriteConfigFile {
+	my ($File, $Config, $Explanations) = @_;
+
+	# Open the config for writing
+	open(my $CONFIG, '>', "$File") or do {
+		# If we can't then we error out, no need for failsafe stuff - it's just the config file
+		RSIntWarn("Unable to save the configuration file $File: $!");
+		return(0);
+	};
+	if(defined($Explanations->{HEADER})) {
+		print $CONFIG "# $Explanations->{HEADER}\n";
+	}
+	foreach(sort(keys(%{$Config}))) {
+		next unless length($Config->{$_});	# Don't write empty options
+		if(defined($Explanations->{$_})) {
+			print $CONFIG "\n# $Explanations->{$_}";
+		}
+		print $CONFIG "\n$_=$Config->{$_}\n";
+	}
+	close($CONFIG);
+}
+
+# Purpose: Load a configuration file
+# Usage: LoadConfigFile(/FILE, \%ConfigHash, \%OptionRegexHash, OnlyValidOptions?);
+#  OptionRegeXhash can be available for only a select few of the config options
+#  or skipped completely (by replacing it by undef).
+#  If OnlyValidOptions is true it will cause LoadConfigFile to skip options not in
+#  the OptionRegexHash.
+sub LoadConfigFile {
+	my ($File, $ConfigHash, $OptionRegex, $OnlyValidOptions) = @_;
+
+	open(my $CONFIG, '<', "$File") or do {
+		RSIntWarn(sprintf("Unable to read the configuration settings from %s: %s", $File, $!));
+		return(0);
+	};
+	while(<$CONFIG>) {
+		next if m/^\s*(#.*)?$/;
+		next unless m/=/;
+		chomp;
+		my $Option = $_;
+		my $Value = $_;
+		$Option =~ s/^\s*(\w+)\s*=.*/$1/;
+		$Value =~ s/^\s*\w+\s*=\s*(.*)\s*/$1/;
+		if($OnlyValidOptions) {
+			unless(defined($OptionRegex->{$Option})) {
+				RSIntWarn("Unknown configuration option \"$Option\" (=$Value) in $File: Ignored.");
+				next;
+			}
+		}
+		unless(defined($Value)) {
+			RSIntWarn("Empty value for option $Option in $File");
+		}
+		if(defined($OptionRegex) and defined($OptionRegex->{$Option})) {
+			my $MustMatch = $OptionRegex->{$Option};
+			unless ($Value =~ /$MustMatch/) {
+				RSIntWarn("Invalid setting of $Option (=$Value) in the config file: Must match $OptionRegex->{Option}.");
+				next;
+			}
+		}
+		$ConfigHash->{$Option} = $Value;
+	}
+	close($CONFIG);
+}
+
+# Purpose: Mark something as a stub
+# Usage: STUB();
+sub STUB
+{
+	my ($package, $filename, $line, $subroutine, $hasargs,
+		$wantarray, $evaltext, $is_require, $hints, $bitmask) = caller(1);
+	my $msg = "STUB: $subroutine";
+	RSIntWarn($msg);
+}
+
+# Purpose: Prompt for an RFC to open
+# Usage: OpenFile();
+sub OpenFile
+{
+	my $file = GetInput('Open RFC','Please enter the RFC ID you want to open');
+	if ($file)
+	{
+		RSInfo("You entered: $file");
+	}
+}
+
+# Purpose: Exit the program
+# Usage: ExitProg();
+sub ExitProg
+{
+	STUB();
+	exit(0);
+}
+
+# Purpose: Display the about dialog
+# Usage: AboutDialog();
+sub AboutDialog
+{
+	return RSInfo('About RFCShow',"This is RFCShow $VERSION.\nBring your own kitchen sink.\n\nCopyright (C) Eskild Hustvedt 2008");
+}
+
+# Purpose: Give help
+# Usage: HelpMe();
+sub HelpMe
+{
+	return RSInfo('Help',"Some day you will get help here.\nFor now you get this helpful dialog.");
+}
+
+# Purpose: Perform search stuff
+# Usage: SearchDialog(TYPE?);
+sub SearchDialog
+{
+	STUB();
+}
+
+# Purpose: Download files
+# Usage: DownloadFiles(TYPE);
+sub DownloadFiles
+{
+	STUB();
+}
+
+# Purpose: Print formatted --help output
+# Usage: PrintHelp("-shortoption", "--longoption", "description");
+sub PrintHelp {
+	printf "%-4s %-16s %s\n", $_[0], $_[1], $_[2];
+}
+
+# Purpose: Initialize
+# Usage: InitMain();
+sub InitMain
+{
+	# Possible entries
+	my @PossibleEntries;
+	push(@PossibleEntries,'/usr/share/doc/rfc');
+	push(@PossibleEntries,$ENV{HOME}.'/rfcshow');
+	push(@PossibleEntries,$ENV{HOME}.'/rfcs');
+	# Populate @Directories
+	foreach(@PossibleEntries)
+	{
+		if (-e $_)
+		{
+			push(@Directories,$_);
+		}
+	}
+	# Load config
+	if(not -e $confFile)
+	{
+		WriteRFCShowRC();
+	}
+	else
+	{
+		LoadRFCShowRC();
+		# Re-write it so that we're sure all entries exist
+		WriteRFCShowRC();
+	}
+	# screen workaround
+	if(defined($ENV{TERM}) and $ENV{TERM} eq 'screen')
+	{
+		$ENV{TERM} = 'xterm';
+	}
+}
+
+# Purpose: Create the main UI for the user
+# Usage: CreateMainUI();
+sub CreateMainUI
+{
+	# Define the menu
+	my @Menu = (
+		{ -label => 'File', 
+			-submenu => [
+			{ -label => 'Open ^O', -value => \&OpenFile},
+			{ -label => 'Exit ^Q', -value => \&ExitProg}
+			]
+		},
+		{ -label => 'Edit',
+			-submenu => [
+			{ -label => 'Search', -value => sub { SearchDialog();}},
+			{ -label => 'Repeat search', -value => sub { SearchDialog('REPEAT');}},
+			{ -label => 'Search in Index', -value => sub { SearchDialog('INDEX');}},
+			{ -label => 'Search All', -value => sub { SearchDialog('ALL');}},
+			],
+		},
+		{ -label => 'Grab',
+			-submenu => [
+			{ -label => 'All Latest', -value => sub { DownloadFiles('LATEST');}},
+			{ -label => 'One', -value => sub { DownloadFiles('ONE');}},
+			{ -label => 'Index', -value => sub { DownloadFiles('INDEX');}},
+			],
+		},
+		{ -label => 'Help', 
+			-submenu => [
+			{ -label => 'Contents', -value => \&HelpMe},
+			{ -label => 'About', -value => \&AboutDialog},
+			]
+		} 
+	);
+
+	# Create root widget
+	$rootWindow = new Curses::UI ( 
+		-clear_on_exit => 0,
+		-color_support => 1
+	);
+
+	# Add the menu
+	$MenuWidget = $rootWindow->add(
+		'menu','Menubar', 
+		-fg   => $config{col_fg},
+		-bg   => $config{col_bg},
+		-menu => \@Menu,
+	);
+
+	# Create the main widget
+	$MainWidget = $rootWindow->add(
+		'screen', 'Window',
+		-padtop      => 1,
+		-border		 => 0,
+		-ipad		 => 0,
+	);
+
+	# Help information at the bottom
+	$MainWidget->add(
+		'help', 'Label',
+		-y 	 	 => -2,
+		-width		 => -1,
+		-reverse 	 => 1,
+		-paddingspaces   => 1,
+		-fg              => $config{col_bg},
+		-bg              => $config{col_fg},
+		-text 	 	 => 
+		" ^Q Quit  F10 Menu"
+	);
+	if(not $config{ignore_startup_dialog} eq 'true')
+	{
+		AboutDialog();
+	}
+	# Keybindings
+	$rootWindow->set_binding(\&ExitProg, "\cQ","\cC");
+	$rootWindow->set_binding(\&OpenFile, "\cO");
+	$rootWindow->set_binding(sub {shift()->getobj('menu')->focus}, "\cX", KEY_F(10));
+}
+
+GetOptions (
+	'help|h' => sub {
+		print "RFCShow version $VERSION\n\n";
+		PrintHelp('-h','--help','Display this help screen and exit');
+		PrintHelp('-v','--version', 'Display version information and exit');
+		exit(0);
+	},
+	'version|v' => sub {
+		print "RFCShow version $VERSION\n";
+		exit(0);
+	},
+) or die "Run $0 --help for more information\n";
+
+InitMain();
+CreateMainUI();
+MainLoop();
