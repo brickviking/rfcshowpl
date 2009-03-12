@@ -184,8 +184,11 @@ sub getNewUtilWin
 #	It will not do *anything* if the user selects cancel.
 sub GetInput
 {
-	my $title = $_[0] ? $_[0] : 'Untitled';
-	my $text = $_[1] ? $_[1] : 'This is a prompt';
+	my $title = shift;
+	my $text = shift;
+	$title = $title ? $title : 'Untitled';
+	$text = $text ? $text : 'This is a prompt';
+	my $callback = shift;
 	my ($width,$height);
 	# Try to be clever calculating width and height,
 	# but only when text has no newlines.
@@ -219,8 +222,20 @@ sub GetInput
 			-label => '< Accept >',
 			-value => 1,
 			-shortcut => 1,
+			-onpress => sub {
+				my $te = $textentry->get();
+				$rootWindow->delete($ID);
+				$callback->($te);
+			},
 		},
-		'cancel',
+		{
+			-label => '< Cancel >',
+			-value => 1,
+			-shortcut => 2,
+			-onpress => sub {
+				$rootWindow->delete($ID);
+			},
+		},
 		],
 		'-y' => 3,
 		'-centered' => 1,
@@ -228,7 +243,6 @@ sub GetInput
 
 
 	$textentry->focus();
-	my $rtext = $textentry->get();
 }
 
 # Purpose: Write a configuration file
@@ -311,11 +325,12 @@ sub STUB
 # Usage: OpenFile();
 sub OpenFile
 {
-	my $file = GetInput('Open RFC','Please enter the RFC ID you want to open');
-	if ($file)
+	GetInput('Open RFC','Please enter the RFC ID you want to open',
+	sub
 	{
-		RSInfo("You entered: $file");
-	}
+		my $file = shift;
+		RSInfo('Entering',"You entered: $file");
+	});
 }
 
 # Purpose: Exit the program
