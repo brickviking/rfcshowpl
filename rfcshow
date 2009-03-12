@@ -474,6 +474,13 @@ sub CreateMainUI
 	$rootWindow->set_binding(sub {shift()->getobj('menu')->focus}, "\cX", KEY_F(10));
 }
 
+# Purpose: The main app loop
+# Usage: MainLoop();
+sub MainLoop
+{
+	$rootWindow->mainloop;
+}
+
 GetOptions (
 	'help|h' => sub {
 		print "RFCShow version $VERSION\n\n";
