@@ -1,6 +1,11 @@
-Placeholder while I figure out what I want the repo to hold.
 The rfcshow program downloads, stores, searches and displays
 Requests For Comment (rfc) documents in text/pdf/ps/html, though I may
 focus purely on txt at the moment. I (brickviking) am providing the hosting
-and initial concepts, Zero_Dogg is providing code.
+and initial concepts, and some code, Zero_Dogg is providing most of the code,
+and lots of his experience.
+
+At the moment, the instructions are really really simple:
+* Install Curses::UI and Curses perl modules.
+* make the rfcshow script executable.
+* execute it.
 
