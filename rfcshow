@@ -369,7 +369,7 @@ sub SearchDialog
 	# If $1 is ALL, search in the total rfc store for the requested term.
 	# I should stuff any result into $searchterm
 	# so I can use it for the next invocation
-	if ($searchType == '') { 
+	if ($searchType eq '') { 
 	# Hm. What should this search in? Currently loaded doc?
 	#  What if we have no doc loaded?
 	GetInput('Search','Input term to search for',
@@ -380,7 +380,7 @@ sub SearchDialog
 		}
 	);
 	}
-	elsif ($searchType == 'ALL') {
+	elsif ($searchType eq 'ALL') {
 	GetInput('Search All','Input term to search ALL documents for',
 		sub
 		{
@@ -389,7 +389,7 @@ sub SearchDialog
 		}
 	);
 	}
-	elsif ($searchType == 'INDEX') {
+	elsif ($searchType eq 'INDEX') {
 		GetInput('Search Index','Input term to search the RFC index for',
 		sub
 		{
@@ -398,7 +398,7 @@ sub SearchDialog
 		}
 	);
 	}
-	elsif ( $searchType == 'REPEAT')  {
+	elsif ( $searchType eq 'REPEAT')  {
 		# No longer the correct code, but for a stub, who cares.
 		GetInput('Repeat Search','Input term to search for',
 		sub
