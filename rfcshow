@@ -523,7 +523,7 @@ sub CreateMainUI
 
 # Purpose: The main app loop
 # Usage: MainLoop();
-sub MainLoop
+sub Main_Loop
 {
 	$rootWindow->mainloop;
 }
@@ -543,4 +543,4 @@ GetOptions (
 
 InitMain();
 CreateMainUI();
-MainLoop();
+Main_Loop();
