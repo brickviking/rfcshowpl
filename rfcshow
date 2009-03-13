@@ -373,23 +373,23 @@ sub SearchDialog
 	{
 	# Hm. What should this search in? Currently loaded doc?
 	#  What if we have no doc loaded?
-	GetInput('Search','Input term to search for',
-		sub
-		{
-			my $file = shift;
-			RSInfo('Entering',"You entered $file");
-		}
-	);
+		GetInput('Search','Input term to search for',
+			sub
+			{
+				my $file = shift;
+				RSInfo('Entering',"You entered $file");
+			}
+		);
 	}
 	elsif ($searchType eq 'ALL')
 	{
-	GetInput('Search All','Input term to search ALL documents for',
-		sub
-		{
-			my $file = shift;
-			RSInfo('Entering',"You entered $file");
-		}
-	);
+		GetInput('Search All','Input term to search ALL documents for',
+			sub
+			{
+				my $file = shift;
+				RSInfo('Entering',"You entered $file");
+			}
+		);
 	}
 	elsif ($searchType eq 'INDEX')
 	{
