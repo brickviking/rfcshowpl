@@ -35,6 +35,10 @@ my $confFile = $ENV{HOME}.'/.rfcshowrc';
 my @Directories;
 my $downloader = 'LWP';
 my $LWP_InitialOut = 0;
+my $UserAgent = 'rfcshow '.$VERSION.' (LWP)';
+my $lastP = 0;
+my $prevLen = 0;
+my $Verbose;
 
 # Config with default values
 my %config = (
