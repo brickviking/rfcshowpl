@@ -355,14 +355,7 @@ sub HelpMe
 	return RSInfo('Help',"Some day you will get help here.\nFor now you get this helpful dialog.");
 }
 
-# Purpose: Perform search stuff
-# Usage: SearchDialog(TYPE?);
-sub SearchDialog2
-{
-	STUB();
-}
-
-# Purpose: blank Search dialog while I (ecg) hack and cut code
+# Purpose: Search dialog while I (ecg) hack and cut code
 # Usage: SearchDialog(TYPE);
 sub SearchDialog
 {
@@ -376,21 +369,13 @@ sub SearchDialog
 	# If $1 is ALL, search in the total rfc store for the requested term.
 	# I should stuff any result into $searchterm
 	# so I can use it for the next invocation
-	my $ret = GetInput('Search','Input term to search for',
+	GetInput('Search','Input term to search for',
 		sub
 		{
 			my $file = shift;
 			RSInfo('Entering',"You entered $file");
 		}
 	);
-	if ($ret)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
 }
 
 # Purpose: Download files
