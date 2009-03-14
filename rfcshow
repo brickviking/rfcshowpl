@@ -39,7 +39,7 @@ my $UserAgent = 'rfcshow '.$VERSION.' (LWP)';
 my $lastP = 0;
 my $prevLen = 0;
 my $Verbose;
-my $rfc_indexfile = "rfc-index.txt";
+my $RFCIndex = $RFCPrefix.'-index'.$RFCSuffix;
 
 # Config with default values
 my %config = (
@@ -457,7 +457,7 @@ sub Search
     my ($looking_for) = join " ", @_;
 	# ... opens the filehandle 
 	# TODO: we ought to check the file exists. die is a bit brutal, but yeah.
-    open (RFCINDEX, $rfc_indexfile) or die("Cannot open $rfc_indexfile");
+    open (RFCINDEX, $RFCIndex) or die("Cannot open $RFCIndex");
     foreach $line (<RFCINDEX>) 
     {
       next if $. < 66;
@@ -686,6 +686,8 @@ sub PrintHelp {
 # Usage: InitMain();
 sub InitMain
 {
+	# Var to check if rfc-index.txt is in any of @PossibleEntries
+	my $Succeed = 0;
 	# Possible entries
 	my @PossibleEntries;
 	push(@PossibleEntries,'/usr/share/doc/rfc');
@@ -700,6 +702,7 @@ sub InitMain
 			push(@Directories,$_);
 		}
 	}
+	# TODO: At this stage, if none of the dirs exist, we offer to create one in $HOME
 	# Load config
 	if(not -e $confFile)
 	{
@@ -716,9 +719,19 @@ sub InitMain
 	{
 		$ENV{TERM} = 'xterm';
 	}
-	if(not -e $rfc_indexfile) 
+	# TODO: too simple. Needs to look inside @PossibleEntries
+	foreach(@PossibleEntries)
 	{
-		die("Cannot find $rfc_indexfile, please grab a copy of it from $RFCSource\n");
+		my $try = $_."/";
+		if(-e $try.$RFCPrefix."-index".$RFCSuffix) 
+		{
+			# Only set if we've found it
+			$RFCIndex = $try.$RFCPrefix."-index".$RFCSuffix;
+			$Succeed = 1;
+		}
+	}
+	if ($Succeed == 0) {
+		warn("Cannot find $RFCIndex, please grab a copy of it from $RFCSource\n");
 	}
 }
 
