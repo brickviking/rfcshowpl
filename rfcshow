@@ -39,6 +39,7 @@ my $UserAgent = 'rfcshow '.$VERSION.' (LWP)';
 my $lastP = 0;
 my $prevLen = 0;
 my $Verbose;
+my $rfc_indexfile = "rfc-index.txt";
 
 # Config with default values
 my %config = (
@@ -399,13 +400,13 @@ sub SearchDialog
 	}
 	elsif ($searchType eq 'INDEX')
 	{
-		GetInput('Search Index','Input term to search the RFC index for',
-		sub
-		{
-			my $file = shift;
-			RSInfo('Entering',"You entered $file");
-		}
-	);
+		GetInput('Search Index','Input term to search the RFC index for', \&SearchOutput);
+#		sub
+#		{
+#			my $file = shift;
+#			RSInfo('Entering',"You entered $file");
+#		}	
+#	);
 	}
 	elsif ( $searchType eq 'REPEAT')
 	{
@@ -418,6 +419,71 @@ sub SearchDialog
 		}
 	);
 	}
+}
+
+# Purpose: wraps the Search function, outputting to dialog.
+# Usage: SearchOutput($searchTerm);
+sub SearchOutput
+{
+	my $title = "Results";
+	# We grab our results and stuff them into an array.
+	my @SearchArray = Search(@_);
+	# These don't appear in the correct colours.
+	$rootWindow->dialog(
+		-title     => $title,
+		-buttons   => ['ok'],
+		-message => @SearchArray,
+		-tbg => $config{col_fg},
+		-tfg => $config{col_bg},
+		-bg => $config{col_bg},
+		-fg => $config{col_fg},
+		-bbg => $config{col_bg},
+		-bfg => $config{col_fg}
+	);
+}
+
+# Purpose: Search function - back end of Search dialog.
+# Usage:  Search(filename,looking_for)
+# Returns:  a list of RFC numbers with the search term.
+sub Search
+{
+# First, we have to have an index to search...
+# TODO: this is a static filename, it ought not to be.
+    my ($thing,$line,$first_word);
+    my $found = 0;
+    my $rfccount = 0;
+    my @rfclist;
+	# ECG: grabs everything on the function's input.
+    my ($looking_for) = join " ", @_;
+	# ... opens the filehandle 
+	# TODO: we ought to check the file exists. die is a bit brutal, but yeah.
+    open (RFCINDEX, $rfc_indexfile) or die("Cannot open $rfc_indexfile");
+    foreach $line (<RFCINDEX>) 
+    {
+      next if $. < 66;
+      if ($line !~ /^\s*$/){
+        $thing .= $line; 
+        # This is too simplistic, for example a search for mail
+        # matches the prefacing paragraph before all the descs
+        if ($line =~ /$looking_for/i) {
+          $found = 1;
+          $rfccount++;
+          # now, how do we recover first element of a line?
+          push @rfclist, (split /\W+/, $line)[0];
+		  # We actually want the entire line, not the first element. But I'll work with just the first for the moment.
+        }
+      }
+     else { 
+      if ($found) { 
+		   }
+          }
+    $thing = ""; $found = 0;
+    }
+  # Let's be tidy.
+    close (RFCINDEX);
+	# TODO: Ouch. Where do we put the output?
+	# Worse still, where do we put it without using a file?
+	return @rfclist;
 }
 
 # Purpose: Download files
@@ -649,6 +715,10 @@ sub InitMain
 	if(defined($ENV{TERM}) and $ENV{TERM} eq 'screen')
 	{
 		$ENV{TERM} = 'xterm';
+	}
+	if(not -e $rfc_indexfile) 
+	{
+		die("Cannot find $rfc_indexfile, please grab a copy of it from $RFCSource\n");
 	}
 }
 
