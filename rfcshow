@@ -409,6 +409,7 @@ sub SearchDialog
 #	);
 	}
 	elsif ( $searchType eq 'REPEAT')
+	# Makes no sense for INDEX, but does for current doc or ALL
 	{
 		# No longer the correct code, but for a stub, who cares.
 		GetInput('Repeat Search','Input term to search for',
@@ -428,11 +429,11 @@ sub SearchOutput
 	my $title = "Results";
 	# We grab our results and stuff them into an array.
 	my @SearchArray = Search(@_);
-	# These don't appear in the correct colours.
+	my $SearchText = join " ", @SearchArray;
 	$rootWindow->dialog(
 		-title     => $title,
 		-buttons   => ['ok'],
-		-message => @SearchArray,
+		-message => $SearchText,
 		-tbg => $config{col_fg},
 		-tfg => $config{col_bg},
 		-bg => $config{col_bg},
@@ -443,20 +444,18 @@ sub SearchOutput
 }
 
 # Purpose: Search function - back end of Search dialog.
-# Usage:  Search(filename,looking_for)
+# Usage:  Search(filename,lookingFor)
 # Returns:  a list of RFC numbers with the search term.
 sub Search
 {
-# First, we have to have an index to search...
-# TODO: this is a static filename, it ought not to be.
-    my ($thing,$line,$first_word);
+    my ($thing,$line);
     my $found = 0;
     my $rfccount = 0;
-    my @rfclist;
+    my @rfcList;
 	# ECG: grabs everything on the function's input.
-    my ($looking_for) = join " ", @_;
+    my $lookingFor = join " ", @_;
+	warn('Looking for ', $lookingFor);
 	# ... opens the filehandle 
-	# TODO: we ought to check the file exists. die is a bit brutal, but yeah.
     open (RFCINDEX, $RFCIndex) or die("Cannot open $RFCIndex");
     foreach $line (<RFCINDEX>) 
     {
@@ -465,11 +464,11 @@ sub Search
         $thing .= $line; 
         # This is too simplistic, for example a search for mail
         # matches the prefacing paragraph before all the descs
-        if ($line =~ /$looking_for/i) {
+        if ($line =~ /$lookingFor/i) {
           $found = 1;
           $rfccount++;
           # now, how do we recover first element of a line?
-          push @rfclist, (split /\W+/, $line)[0];
+          push @rfcList, (split /\W+/, $line)[0];
 		  # We actually want the entire line, not the first element. But I'll work with just the first for the moment.
         }
       }
@@ -483,7 +482,7 @@ sub Search
     close (RFCINDEX);
 	# TODO: Ouch. Where do we put the output?
 	# Worse still, where do we put it without using a file?
-	return @rfclist;
+	return @rfcList;
 }
 
 # Purpose: Download files
