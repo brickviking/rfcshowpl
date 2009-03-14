@@ -454,7 +454,7 @@ sub Search
     my @rfcList;
 	# ECG: grabs everything on the function's input.
     my $lookingFor = join " ", @_;
-	warn('Looking for ', $lookingFor);
+#	warn('Looking for ', $lookingFor);
 	# ... opens the filehandle 
     open (RFCINDEX, $RFCIndex) or die("Cannot open $RFCIndex");
     foreach $line (<RFCINDEX>) 
