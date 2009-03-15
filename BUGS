@@ -1,0 +1,5 @@
+So far, one main bug I found, when searching in rfc-index.txt for the term "Simple", I get a result of
+" "  (for entry 3781)
+This doesn't end up with the number associated, because the gulper hasn't gone back far enough and grabbed the previous line.
+Might have to think how the Gulper reads the file. So far, I've been doing it line by line.
+
