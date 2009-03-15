@@ -446,51 +446,38 @@ sub SearchOutput
 # Purpose: Search function - back end of Search dialog.
 # Usage:  Search(filename,lookingFor)
 # Returns:  a list of RFC numbers with the search term.
+# Provided by: Joshua.Gatcomb@gmail.com
 sub Search
 {
-    my ($thing,$line);
-    my $found = 0;
-    my $rfccount = 0;
-    my @rfcList;
-	# ECG: grabs everything on the function's input.
-    my $lookingFor = join " ", @_;
-#	warn('Looking for ', $lookingFor);
-	# ... opens the filehandle 
-    open (RFCINDEX, $RFCIndex) or die("Cannot open $RFCIndex");
-    foreach $line (<RFCINDEX>) 
+    my $search_str = uc(join ' ', @_);
+
+    open(my $RFCINDEX, '<', $RFCIndex) or die "Unable to open 'rfc-index.txt' for reading: $!";
+	# A suggestion was made to slurp the index file into a in-memory structure for later use
+
+    # throw away first 68 lines as it is not useful
+    <$RFCINDEX> for 1 .. 68;
+
+    my @match;
+
     {
-	# This skips over the first 69 lines, because it's blurb.
-      next if $. < 69;
-      if ($line !~ /^\s*$/){
-        $thing .= $line; 
-        # This is too simplistic, for example a search for mail
-        # matches the prefacing paragraph before all the descs
-        if ($line =~ /$lookingFor/i) {
-          $found = 1;
-          $rfccount++;
-		  # Let's spit this out to stderr, so I can look at it a bit.
-		  # TODO: remove this when I've finished
-#		  warn($lookingFor, ' found on: ', $line);
-#		  warn('First entry is: ', (split /\W+/, $line)[0]);
-		  # End of debugging output
-          # now, how do we recover first element of a line?
-          push @rfcList, (split /\W+/, $line)[0];
-		  # We actually want the entire line, not the first element. But I'll work with just the first for the moment.
-        }
-      }
-     else { 
-		 # Why the heck HAVE I got this in here, anyhow?
-      if ($found) { 
-		   }
-          }
-    $thing = ""; $found = 0;
+        # paragraph mode
+        local $/ = "";
+
+        while (<$RFCINDEX>) {
+            # turn all carriage return/new lines into spaces
+            tr/\r\n/  /;
+
+            # trim all spaces
+            s/\s+/ /;
+
+#            push @match, $_ if index(uc($_), $search_str) != -1;
+			push @match, (split /\W+/, $_)[0] if index(uc($_), $search_str) != -1;
+
+        }        
     }
-  # Let's be tidy.
-    close (RFCINDEX);
-	# TODO: Ouch. Where do we put the output?
-	# Worse still, where do we put it without using a file?
-	return @rfcList;
+    return @match;
 }
+
 
 # Purpose: Download files
 # Usage: DownloadFiles(TYPE);
