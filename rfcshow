@@ -459,7 +459,8 @@ sub Search
     open (RFCINDEX, $RFCIndex) or die("Cannot open $RFCIndex");
     foreach $line (<RFCINDEX>) 
     {
-      next if $. < 66;
+	# This skips over the first 69 lines, because it's blurb.
+      next if $. < 69;
       if ($line !~ /^\s*$/){
         $thing .= $line; 
         # This is too simplistic, for example a search for mail
@@ -467,12 +468,18 @@ sub Search
         if ($line =~ /$lookingFor/i) {
           $found = 1;
           $rfccount++;
+		  # Let's spit this out to stderr, so I can look at it a bit.
+		  # TODO: remove this when I've finished
+#		  warn($lookingFor, ' found on: ', $line);
+#		  warn('First entry is: ', (split /\W+/, $line)[0]);
+		  # End of debugging output
           # now, how do we recover first element of a line?
           push @rfcList, (split /\W+/, $line)[0];
 		  # We actually want the entire line, not the first element. But I'll work with just the first for the moment.
         }
       }
      else { 
+		 # Why the heck HAVE I got this in here, anyhow?
       if ($found) { 
 		   }
           }
