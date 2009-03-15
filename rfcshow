@@ -364,6 +364,7 @@ sub HelpMe
 
 # Purpose: Search dialog while I (ecg) hack and cut code
 # Usage: SearchDialog(TYPE);
+# TODO: this really REALLY needs replacing.
 sub SearchDialog
 {
 	my $searchType = $_[0] ? $_[0] : '';
@@ -424,16 +425,19 @@ sub SearchDialog
 
 # Purpose: wraps the Search function, outputting to dialog.
 # Usage: SearchOutput($searchTerm);
+# TODO: So does this.
 sub SearchOutput
 {
 	my $title = "Results";
 	# We grab our results and stuff them into an array.
 	my @SearchArray = Search(@_);
 	my $SearchText = join " ", @SearchArray;
+	# If we have no results, we should say so.
+	my $Text = $SearchText ? $SearchText : 'No results';
 	$rootWindow->dialog(
 		-title     => $title,
 		-buttons   => ['ok'],
-		-message => $SearchText,
+		-message => $Text,
 		-tbg => $config{col_fg},
 		-tfg => $config{col_bg},
 		-bg => $config{col_bg},
@@ -477,7 +481,6 @@ sub Search
     }
     return @match;
 }
-
 
 # Purpose: Download files
 # Usage: DownloadFiles(TYPE);
