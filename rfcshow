@@ -431,9 +431,14 @@ sub SearchOutput
 	my $title = "Results";
 	# We grab our results and stuff them into an array.
 	my @SearchArray = Search(@_);
+	# Gobble text from the array into one var so that the dialog box can
+	# render it.
+	# Yes, I know I could combine these two lines, but I am t3h n00b
+	# and would rather have code _I_ understand.
 	my $SearchText = join " ", @SearchArray;
 	# If we have no results, we should say so.
 	my $Text = $SearchText ? $SearchText : 'No results';
+	# I want (eventually) to make this into a picklist
 	$rootWindow->dialog(
 		-title     => $title,
 		-buttons   => ['ok'],
@@ -454,29 +459,21 @@ sub SearchOutput
 sub Search
 {
     my $search_str = uc(join ' ', @_);
-
     open(my $RFCINDEX, '<', $RFCIndex) or die "Unable to open 'rfc-index.txt' for reading: $!";
 	# A suggestion was made to slurp the index file into a in-memory structure for later use
-
     # throw away first 68 lines as it is not useful
     <$RFCINDEX> for 1 .. 68;
-
     my @match;
-
     {
         # paragraph mode
         local $/ = "";
-
         while (<$RFCINDEX>) {
             # turn all carriage return/new lines into spaces
             tr/\r\n/  /;
-
             # trim all spaces
             s/\s+/ /;
-
 #            push @match, $_ if index(uc($_), $search_str) != -1;
 			push @match, (split /\W+/, $_)[0] if index(uc($_), $search_str) != -1;
-
         }        
     }
     return @match;
