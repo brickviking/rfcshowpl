@@ -40,6 +40,7 @@ my $lastP = 0;
 my $prevLen = 0;
 my $Verbose;
 my $RFCIndex = $RFCPrefix.'-index'.$RFCSuffix;
+my $RFCINDEX;
 
 # Config with default values
 my %config = (
@@ -345,7 +346,7 @@ sub AskRFC
 sub OpenFile
 {
 	# A suggestion was made to slurp the index file into a in-memory structure for later use
-    open(my $RFCINDEX, '<', $RFCIndex) or die "Unable to open 'rfc-index.txt' for reading: $!";
+    open($RFCINDEX, '<', $RFCIndex) or die "Unable to open 'rfc-index.txt' for reading: $!";
 }
 # Purpose: Exit the program
 # Usage: ExitProg();
