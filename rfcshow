@@ -40,7 +40,7 @@ my $lastP = 0;
 my $prevLen = 0;
 my $Verbose;
 my $RFCIndex = $RFCPrefix.'-index'.$RFCSuffix;
-my $RFCINDEX;
+my $RFCFile;
 
 # Config with default values
 my %config = (
@@ -346,7 +346,7 @@ sub AskRFC
 sub OpenFile
 {
 	# A suggestion was made to slurp the index file into a in-memory structure for later use
-    open($RFCINDEX, '<', $RFCIndex) or die "Unable to open 'rfc-index.txt' for reading: $!";
+    open($RFCFile, '<', $RFCIndex) or die "Unable to open 'rfc-index.txt' for reading: $!";
 }
 # Purpose: Exit the program
 # Usage: ExitProg();
@@ -360,7 +360,7 @@ sub ExitProg
 # Usage: AboutDialog();
 sub AboutDialog
 {
-	return RSInfo('About RFCShow',"This is RFCShow $VERSION.\nBring your own kitchen sink.\n\nCopyright (C) Eskild Hustvedt 2008, with portions by Eric Gillespie\nand other authors");
+	return RSInfo('About RFCShow',"This is RFCShow $VERSION.\nBring your own kitchen sink.\n\nCopyright (C) Eskild Hustvedt 2008, Eric Gillespie\nand other authors");
 }
 
 # Purpose: Give help
@@ -438,6 +438,7 @@ sub SearchOutput
 {
 	my $title = "Results";
 	# First, we open the file, assuming it exists.
+	# TODO Incorrect assumption. It's not always the Index file we open.
 	OpenFile($RFCIndex);
 	# We grab our results and stuff them into an array.
 	my @SearchArray = Search(@_);
@@ -465,18 +466,19 @@ sub SearchOutput
 # Purpose: Search function - back end of Search dialog.
 # Usage:  Search(filename,lookingFor)
 # Returns:  a list of RFC numbers with the search term.
-# Requires: valid open filehandle $RFCINDEX
+# Requires: valid open filehandle $RFCFile
 # Provided by: Joshua.Gatcomb@gmail.com
 sub Search
 {
     my $search_str = uc(join ' ', @_);
     # throw away first 68 lines as it is not useful
-    <$RFCINDEX> for 1 .. 68;
+	# TODO Only relevant for the Index
+    <$RFCFile> for 1 .. 68;
     my @match;
     {
         # paragraph mode
         local $/ = "";
-        while (<$RFCINDEX>) {
+        while (<$RFCFile>) {
             # turn all carriage return/new lines into spaces
             tr/\r\n/  /;
             # trim all spaces
