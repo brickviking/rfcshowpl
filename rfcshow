@@ -409,7 +409,7 @@ sub SearchDialog
 	}
 	elsif ($searchType eq 'INDEX')
 	{
-		GetInput('Search Index','Input term to search the RFC index for', \&SearchOutput);
+		GetInput('Search Index','Input term to search the RFC index for', \&SearchIndex);
 #		sub
 #		{
 #			my $file = shift;
@@ -432,16 +432,33 @@ sub SearchDialog
 }
 
 # Purpose: wraps the Search function, outputting to dialog.
-# Usage: SearchOutput($searchTerm);
+# Usage: SearchIndex($searchTerm);
 # TODO: So does this.
-sub SearchOutput
+sub SearchIndex
 {
 	my $title = "Results";
 	# First, we open the file, assuming it exists.
-	# TODO Incorrect assumption. It's not always the Index file we open.
 	OpenFile($RFCIndex);
 	# We grab our results and stuff them into an array.
-	my @SearchArray = Search(@_);
+	#####my @SearchArray = Search(@_);
+    my $search_str = uc(join ' ', @_);
+    # skip first 68 lines, what we want isn't there. Only relevant for the 
+	# rfc-index
+    <$RFCFile> for 1 .. 68;
+    my @SearchArray;
+    {
+        # paragraph mode
+        local $/ = "";
+        while (<$RFCFile>) {
+            # turn all carriage return/new lines into spaces
+            tr/\r\n/  /;
+            # trim all spaces
+            s/\s+/ /;
+#            push @match, $_ if index(uc($_), $search_str) != -1;
+			push @SearchArray, (split /\W+/, $_)[0] if index(uc($_), $search_str) != -1;
+        }        
+    }
+	#####
 	# Gobble text from the array into one var so that the dialog box can
 	# render it.
 	# Yes, I know I could combine these two lines, but I am t3h n00b
@@ -471,19 +488,13 @@ sub SearchOutput
 sub Search
 {
     my $search_str = uc(join ' ', @_);
-    # throw away first 68 lines as it is not useful
-	# TODO Only relevant for the Index
-    <$RFCFile> for 1 .. 68;
     my @match;
     {
         # paragraph mode
         local $/ = "";
         while (<$RFCFile>) {
-            # turn all carriage return/new lines into spaces
             tr/\r\n/  /;
-            # trim all spaces
             s/\s+/ /;
-#            push @match, $_ if index(uc($_), $search_str) != -1;
 			push @match, (split /\W+/, $_)[0] if index(uc($_), $search_str) != -1;
         }        
     }
