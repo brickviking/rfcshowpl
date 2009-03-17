@@ -329,8 +329,8 @@ sub STUB
 }
 
 # Purpose: Prompt for an RFC to open
-# Usage: OpenFile();
-sub OpenFile
+# Usage: AskRFC();
+sub AskRFC
 {
 	GetInput('Open RFC','Please enter the RFC ID you want to open',
 	sub
@@ -340,6 +340,13 @@ sub OpenFile
 	});
 }
 
+# Purpose: Open file
+# Usage: OpenFile($filename)
+sub OpenFile
+{
+	# A suggestion was made to slurp the index file into a in-memory structure for later use
+    open(my $RFCINDEX, '<', $RFCIndex) or die "Unable to open 'rfc-index.txt' for reading: $!";
+}
 # Purpose: Exit the program
 # Usage: ExitProg();
 sub ExitProg
@@ -455,12 +462,11 @@ sub SearchOutput
 # Purpose: Search function - back end of Search dialog.
 # Usage:  Search(filename,lookingFor)
 # Returns:  a list of RFC numbers with the search term.
+# Requires: valid open filehandle $RFCINDEX
 # Provided by: Joshua.Gatcomb@gmail.com
 sub Search
 {
     my $search_str = uc(join ' ', @_);
-    open(my $RFCINDEX, '<', $RFCIndex) or die "Unable to open 'rfc-index.txt' for reading: $!";
-	# A suggestion was made to slurp the index file into a in-memory structure for later use
     # throw away first 68 lines as it is not useful
     <$RFCINDEX> for 1 .. 68;
     my @match;
@@ -736,7 +742,7 @@ sub CreateMainUI
 	my @Menu = (
 		{ -label => 'File', 
 			-submenu => [
-			{ -label => 'Open ^O', -value => \&OpenFile},
+			{ -label => 'Open ^O', -value => \&AskRFC},
 			{ -label => 'Exit ^Q', -value => \&ExitProg}
 			]
 		},
@@ -803,7 +809,7 @@ sub CreateMainUI
 	}
 	# Keybindings
 	$rootWindow->set_binding(\&ExitProg, "\cQ","\cC");
-	$rootWindow->set_binding(\&OpenFile, "\cO");
+	$rootWindow->set_binding(\&AskRFC, "\cO");
 	$rootWindow->set_binding(sub {shift()->getobj('menu')->focus}, "\cX", KEY_F(10));
 }
 
