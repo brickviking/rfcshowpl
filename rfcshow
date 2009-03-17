@@ -347,7 +347,6 @@ sub OpenFile
 {
 	my $file = shift;
 	# A suggestion was made to slurp the index file into a in-memory structure for later use
-	warn("Opening $file\n");
     open($RFCFile, '<', $file) or die "Unable to open $file for reading: $!";
 }
 
@@ -439,7 +438,6 @@ sub CallSearch
 {
 	# First, we open the file, assuming it exists.
 	OpenFile($RFCIndex);
-	warn("Opened $RFCIndex, with value $RFCFile\n");
     my @SearchArray = SearchIndex(@_);
 	SearchDisplay(@SearchArray);
 }
@@ -641,7 +639,7 @@ sub fetchURL
 		}
 		if(not $response->is_success)
 		{
-			warn("Download of $URL failed: ".$response->status_line."\n");
+			RSIntWarn("Download of $URL failed: ".$response->status_line."\n");
 			return;
 		}
 		# Return the content
@@ -763,7 +761,8 @@ sub InitMain
 		}
 	}
 	if ($Succeed == 0) {
-		warn("Cannot find $RFCIndex, please grab a copy of it from $RFCSource\n");
+		# TODO This should show a dialog box instead.
+		RSIntWarn("Cannot find $RFCIndex, please grab a copy of it from $RFCSource\n");
 	}
 }
 
