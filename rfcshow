@@ -352,7 +352,7 @@ sub ExitProg
 # Usage: AboutDialog();
 sub AboutDialog
 {
-	return RSInfo('About RFCShow',"This is RFCShow $VERSION.\nBring your own kitchen sink.\n\nCopyright (C) Eskild Hustvedt 2008, with portions by other authors");
+	return RSInfo('About RFCShow',"This is RFCShow $VERSION.\nBring your own kitchen sink.\n\nCopyright (C) Eskild Hustvedt 2008, with portions by Eric Gillespie\nand other authors");
 }
 
 # Purpose: Give help
