@@ -377,7 +377,7 @@ sub SearchDialog
 {
 	my $searchType = $_[0] ? $_[0] : '';
 	my $searchTerm;
-	# Currently stubbed.
+	# Currently mostly stubbed.
 	# What should happen here is: (case switch on $searchType)
 	# If $1 is blank, bring up a search dialog prompting for term
 	# If $1 is REPEAT, search for the next occurence of term
@@ -393,7 +393,7 @@ sub SearchDialog
 			sub
 			{
 				my $file = shift;
-				RSInfo('Entering',"You entered $file");
+				RSInfo('Entering',"No file loaded, but you entered $file");
 			}
 		);
 	}
@@ -431,16 +431,16 @@ sub SearchDialog
 	}
 }
 
-# Purpose: wraps the Search function, outputting to dialog.
+# Purpose: Searches an opened rfc-index for term
 # Usage: SearchIndex($searchTerm);
-# TODO: So does this.
+# TODO Should split this between Searchterm and Output
 sub SearchIndex
 {
 	my $title = "Results";
 	# First, we open the file, assuming it exists.
 	OpenFile($RFCIndex);
 	# We grab our results and stuff them into an array.
-	#####my @SearchArray = Search(@_);
+	#####my @SearchArray = Search(@_); # Leave in, require for later
     my $search_str = uc(join ' ', @_);
     # skip first 68 lines, what we want isn't there. Only relevant for the 
 	# rfc-index
