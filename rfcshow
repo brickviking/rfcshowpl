@@ -437,6 +437,8 @@ sub SearchDialog
 sub SearchOutput
 {
 	my $title = "Results";
+	# First, we open the file, assuming it exists.
+	OpenFile($RFCIndex);
 	# We grab our results and stuff them into an array.
 	my @SearchArray = Search(@_);
 	# Gobble text from the array into one var so that the dialog box can
