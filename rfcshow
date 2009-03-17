@@ -345,9 +345,12 @@ sub AskRFC
 # Usage: OpenFile($filename)
 sub OpenFile
 {
+	my $file = shift;
 	# A suggestion was made to slurp the index file into a in-memory structure for later use
-    open($RFCFile, '<', $RFCIndex) or die "Unable to open 'rfc-index.txt' for reading: $!";
+	warn("Opening $file\n");
+    open($RFCFile, '<', $file) or die "Unable to open $file for reading: $!";
 }
+
 # Purpose: Exit the program
 # Usage: ExitProg();
 sub ExitProg
@@ -409,7 +412,7 @@ sub SearchDialog
 	}
 	elsif ($searchType eq 'INDEX')
 	{
-		GetInput('Search Index','Input term to search the RFC index for', \&SearchIndex);
+		GetInput('Search Index','Input term to search the RFC index for', \&CallSearch);
 #		sub
 #		{
 #			my $file = shift;
@@ -431,21 +434,27 @@ sub SearchDialog
 	}
 }
 
-# Purpose: Searches an opened rfc-index for term
-# Usage: SearchIndex($searchTerm);
-# TODO Should split this between Searchterm and Output
-sub SearchIndex
+# Purpose: Wrapper function to get all the bits right
+sub CallSearch
 {
-	my $title = "Results";
 	# First, we open the file, assuming it exists.
 	OpenFile($RFCIndex);
+	warn("Opened $RFCIndex, with value $RFCFile\n");
+    my @SearchArray = SearchIndex(@_);
+	SearchDisplay(@SearchArray);
+}
+
+# Purpose: Searches an opened rfc-index for term
+# Usage: SearchIndex($searchTerm);
+sub SearchIndex
+{
 	# We grab our results and stuff them into an array.
 	#####my @SearchArray = Search(@_); # Leave in, require for later
+	my @results;
     my $search_str = uc(join ' ', @_);
     # skip first 68 lines, what we want isn't there. Only relevant for the 
 	# rfc-index
     <$RFCFile> for 1 .. 68;
-    my @SearchArray;
     {
         # paragraph mode
         local $/ = "";
@@ -455,15 +464,23 @@ sub SearchIndex
             # trim all spaces
             s/\s+/ /;
 #            push @match, $_ if index(uc($_), $search_str) != -1;
-			push @SearchArray, (split /\W+/, $_)[0] if index(uc($_), $search_str) != -1;
+			push @results, (split /\W+/, $_)[0] if index(uc($_), $search_str) != -1;
         }        
     }
+	return @results;
+}
+
+# Purpose: Display output of search
+# Usage: SearchDisplay
+sub SearchDisplay
+{
 	#####
 	# Gobble text from the array into one var so that the dialog box can
 	# render it.
 	# Yes, I know I could combine these two lines, but I am t3h n00b
 	# and would rather have code _I_ understand.
-	my $SearchText = join " ", @SearchArray;
+	my $title = "Results";
+	my $SearchText = join " ", @_;
 	# If we have no results, we should say so.
 	my $Text = $SearchText ? $SearchText : 'No results';
 	# I want (eventually) to make this into a picklist
