@@ -411,7 +411,7 @@ sub SearchDialog
 	}
 	elsif ($searchType eq 'INDEX')
 	{
-		GetInput('Search Index','Input term to search the RFC index for', \&CallSearch);
+		GetInput('Search Index','Input term to search the RFC index for', \&CallSearchIndex);
 #		sub
 #		{
 #			my $file = shift;
@@ -434,7 +434,7 @@ sub SearchDialog
 }
 
 # Purpose: Wrapper function to get all the bits right
-sub CallSearch
+sub CallSearchIndex
 {
 	# First, we open the file, assuming it exists.
 	OpenFile($RFCIndex);
