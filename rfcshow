@@ -341,15 +341,6 @@ sub AskRFC
 	});
 }
 
-# Purpose: Open file
-# Usage: OpenFile($filename)
-sub OpenFile
-{
-	my $file = shift;
-	# A suggestion was made to slurp the index file into a in-memory structure for later use
-    open($RFCFile, '<', $file) or die "Unable to open $file for reading: $!";
-}
-
 # Purpose: Exit the program
 # Usage: ExitProg();
 sub ExitProg
@@ -411,13 +402,20 @@ sub SearchDialog
 	}
 	elsif ($searchType eq 'INDEX')
 	{
-		GetInput('Search Index','Input term to search the RFC index for', \&CallSearchIndex);
-#		sub
-#		{
-#			my $file = shift;
-#			RSInfo('Entering',"You entered $file");
-#		}	
-#	);
+		if(open($RFCFile, '<', $RFCIndex))
+		{
+			GetInput('Search Index','Input term to search the RFC index for', 
+				sub
+				{
+					my @search = Search(true, @_);
+					SearchDisplay(@search);
+				}
+			);
+		}
+		else
+		{
+			RSInfo('Error',"Cannot open $RFCIndex");
+		}
 	}
 	elsif ( $searchType eq 'REPEAT')
 	# Makes no sense for INDEX, but does for current doc or ALL
@@ -433,39 +431,31 @@ sub SearchDialog
 	}
 }
 
-# Purpose: Wrapper function to get all the bits right
-sub CallSearchIndex
+# Purpose: Search function - back end of Search dialog.
+# Usage:  Search(filename,lookingFor)
+# Returns:  a list of RFC numbers with the search term.
+# Requires: valid open filehandle $RFCFile
+# Provided by: Joshua.Gatcomb@gmail.com
+sub Search
 {
-	# First, we open the file, assuming it exists.
-	OpenFile($RFCIndex);
-    my @SearchArray = SearchIndex(@_);
-	SearchDisplay(@SearchArray);
-}
-
-# Purpose: Searches an opened rfc-index for term
-# Usage: SearchIndex($searchTerm);
-sub SearchIndex
-{
-	# We grab our results and stuff them into an array.
-	#####my @SearchArray = Search(@_); # Leave in, require for later
-	my @results;
+	my $skip_header = shift;
     my $search_str = uc(join ' ', @_);
+    my @match;
+	if ($skip_header) {
     # skip first 68 lines, what we want isn't there. Only relevant for the 
 	# rfc-index
-    <$RFCFile> for 1 .. 68;
+ 	   <$RFCFile> for 1 .. 68;
+	}
     {
         # paragraph mode
         local $/ = "";
         while (<$RFCFile>) {
-            # turn all carriage return/new lines into spaces
             tr/\r\n/  /;
-            # trim all spaces
             s/\s+/ /;
-#            push @match, $_ if index(uc($_), $search_str) != -1;
-			push @results, (split /\W+/, $_)[0] if index(uc($_), $search_str) != -1;
+			push @match, (split /\W+/, $_)[0] if index(uc($_), $search_str) != -1;
         }        
     }
-	return @results;
+    return @match;
 }
 
 # Purpose: Display output of search
@@ -493,27 +483,6 @@ sub SearchDisplay
 		-bbg => $config{col_bg},
 		-bfg => $config{col_fg}
 	);
-}
-
-# Purpose: Search function - back end of Search dialog.
-# Usage:  Search(filename,lookingFor)
-# Returns:  a list of RFC numbers with the search term.
-# Requires: valid open filehandle $RFCFile
-# Provided by: Joshua.Gatcomb@gmail.com
-sub Search
-{
-    my $search_str = uc(join ' ', @_);
-    my @match;
-    {
-        # paragraph mode
-        local $/ = "";
-        while (<$RFCFile>) {
-            tr/\r\n/  /;
-            s/\s+/ /;
-			push @match, (split /\W+/, $_)[0] if index(uc($_), $search_str) != -1;
-        }        
-    }
-    return @match;
 }
 
 # Purpose: Download files
