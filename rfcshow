@@ -41,6 +41,9 @@ my $prevLen = 0;
 my $Verbose;
 my $RFCIndex = $RFCPrefix.'-index'.$RFCSuffix;
 my $RFCFile;
+# True if the text window has already been displayed (meaning we need
+# 	to destroy it before showing another one)
+my $TextWindowShowing;
 
 # Config with default values
 my %config = (
@@ -146,6 +149,45 @@ sub RSQuestion
 	{
 		return false;
 	}
+}
+
+# Purpose: Display a full-screen(ish) scrollable text window
+# Usage: DisplayText(TEXT STRING);
+sub DisplayText
+{
+	my $text = shift;
+
+	# If we already have a window showing, destroy the widgets
+	if ($TextWindowShowing)
+	{
+		$rootWindow->delete('tvwidget');
+		$rootWindow->delete('tvwin');
+	}
+
+	my $win = $rootWindow->add('tvwin','Window',
+		# Padding on the top so the menu line is shown.
+		-padtop => 1,
+		# Padding on the bottom so the help string shows
+		-padbottom => 2
+	);
+
+	my $textViewer = $win->add('tvwidget', 'TextViewer',
+		# Enable the border, without this it gets hard to distinguish the
+		# text being displayed from the app itself.
+		-border => true,
+		# Enable wrapping in case the terminal is too small for the text
+		-wrapping => true,
+		# Enable a vertical scrollbar. It only gets displayed if the text is
+		# too long.
+		-vscrollbar => true,
+		# The text itself
+		-text => $text
+	);
+	# Focus it
+	$textViewer->focus();
+	# And remember that we need to delete it the next time DisplayText() is
+	# called.
+	$TextWindowShowing = true;
 }
 
 # Purpose: Create a utility window
