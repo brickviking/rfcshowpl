@@ -417,7 +417,7 @@ sub HelpMe
 
 # Purpose: Search dialog while I (ecg) hack and cut code
 # Usage: SearchDialog(TYPE);
-# TODO: this really REALLY needs replacing.
+# TODO: this really REALLY needs work.
 sub SearchDialog
 {
 	my $searchType = $_[0] ? $_[0] : '';
