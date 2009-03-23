@@ -26,6 +26,7 @@ use constant { true => 1, false => 0 };
 use Getopt::Long;
 use Cwd qw(getcwd realpath);
 use File::Basename;
+use File::Slurp;
 
 # Our version number
 my $VERSION = '0.1 Alpha';
@@ -41,6 +42,7 @@ my @Directories;
 my $UserAgent = 'rfcshow '.$VERSION.' (LWP)';
 my $RFCIndex = $RFCPrefix.'-index'.$RFCSuffix;
 my $RFCFile;
+my $RFCFilename;
 # True if the text window has already been displayed (meaning we need
 # 	to destroy it before showing another one)
 my $TextWindowShowing;
@@ -385,11 +387,23 @@ sub STUB
 # Usage: AskRFC();
 sub AskRFC
 {
-	GetInput('Open RFC','Please enter the RFC ID you want to open',
+	GetInput('Open RFC','Please enter the RFC ID you want to open', 
 	sub
 	{
-		my $file = shift;
-		RSInfo('Entering',"You entered: $file");
+		my $num = shift;
+		# this needs to be found in each dir of @ProgressDir
+		if(CheckRFC($num))
+		{
+			if (open($RFCFile, '<', $RFCFilename)) 
+			{
+				my $RFCText = read_file($RFCFile);
+				DisplayText($RFCText);
+			}
+		}
+		else
+		{
+			RSInfo('Error',"Error: rfc$num.txt was unable to be opened");
+		}
 	});
 }
 
@@ -437,8 +451,10 @@ sub SearchDialog
 		GetInput('Search','Input term to search for',
 			sub
 			{
-				my $file = shift;
-				RSInfo('Entering',"No file loaded, but you entered $file");
+#				my $file = shift;
+#				RSInfo('Entering',"No file loaded, but you entered $file");
+				my @search = Search(false, @_);
+				SearchDisplay(@search);
 			}
 		);
 	}
@@ -698,6 +714,25 @@ sub InitMain
 	}
 }
 
+# Purpose: check if document exists in @Directories
+# Usage: CheckRFC($num);
+sub CheckRFC
+{
+	my $Succeed = 0;
+	my $num = shift;
+	foreach(@Directories)
+	{
+		my $try = $_."/";
+		if(-e $try.$RFCPrefix.$num.$RFCSuffix) 
+		{
+			# Only set if we've found it
+			$RFCFilename = $try.$RFCPrefix.$num.$RFCSuffix;
+			$Succeed = 1;
+		}
+	}
+	return $Succeed;
+}
+
 # Purpose: Create the main UI for the user
 # Usage: CreateMainUI();
 sub CreateMainUI
@@ -767,6 +802,17 @@ sub CreateMainUI
 		-text 	 	 => 
 		" ^Q Quit  F10 Menu"
 	);
+	if(open($RFCFile, '<', $RFCIndex))
+	{
+	# We're supposed to turn file into text.
+		my $RFCText = read_file($RFCFile);
+		DisplayText($RFCText);
+	}
+	else
+	{
+		# Gotta warn user there's no Index file (in text form)
+		RSInfo('Error', "Cannot open $RFCIndex\n");
+	}
 	if(not $config{ignore_startup_dialog} eq 'true')
 	{
 		AboutDialog();
