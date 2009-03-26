@@ -27,6 +27,9 @@ use Getopt::Long;
 use Cwd qw(getcwd realpath);
 use File::Basename;
 use File::Slurp;
+use Compress::Zlib;
+use Compress::Bzip2;
+use IPC::Open3;
 
 # Our version number
 my $VERSION = '0.1 Alpha';
@@ -46,7 +49,12 @@ my $RFCFilename;
 # True if the text window has already been displayed (meaning we need
 # 	to destroy it before showing another one)
 my $TextWindowShowing;
-
+# Handle sigchild, needed for open3
+$SIG{CHLD} = sub
+{   
+	my $PID = wait;
+	return(1);
+};
 my $LWP_ProgressMode = 0;
 
 # Config with default values
@@ -528,32 +536,60 @@ sub Search
 
 # Purpose: open a bzip/gzip/lzma/plain file and hand its uncompressed contents on
 # Usage: GetFile($filename);
-#sub GetFile
-#{
-#	if ( -e file.txt) 
-#	{
-#		# Plain, just hand it on.
-#		open($RFCFile, '<', $RFC);
-#	}
-#	elsif ( -e file.txt.bz2)
-#	{
-#		# Uncompress bz2, hand it on
-#	}
-#	elsif ( -e file.txt.gz)
-#	{
-#		# Uncompress gz, hand it on
-#	}
-#	elsif ( -e file.txt.lzma)
-#	{
-#		# Uncompress lzma, hand it on
-#		# TODO find a lzma decompress/compress function
-#	}
-#	else
-#	{
-#		# Oh dear, no file. Tell them so.
-#		RSInfo('Error', "We cannot open this file");
-#	}
-#}
+sub GetFile
+{
+	my $filename = shift;
+	my $return;
+	# FIXME: We need more error handling
+	# FIXME: Should check for readability as well as existance
+
+	if ( -e $filename) 
+	{
+		# Plain, just hand it on.
+		$return = read_file($filename);
+	}
+	elsif ( -e $filename.'.bz2')
+	{
+		# Uncompress bz2
+		my $file = bzopen($filename.'.bz2','r');
+		my $buffer;
+		while($file->bzread($buffer))
+		{
+			$return .= $buffer;
+		}
+	}
+	elsif ( -e $filename.'.gz')
+	{
+		# Uncompress gz
+		my $file = gzopen($filename.'.gz','rb');
+		my $buffer;
+		while($file->gzread($buffer))
+		{
+			$return .= $buffer;
+		}
+	}
+	elsif ( -e $filename.'.lzma')
+	{
+		# XXX: Might want to convert to a perl module once one becomes more
+		# 	widespread.
+		my($in,$out,$err);
+		open3($in, $out, $err,'unlzma','-s',$filename.'.lzma');
+		while(<$out>)
+		{
+			$return .= $_;
+		}
+		close($in);
+		close($out);
+		close($err);
+	}
+	else
+	{
+		# Oh dear, no file. Tell them so.
+		RSInfo('Error', "We cannot open this file");
+		return;
+	}
+	return $return;
+}
 
 # Purpose: Display output of search
 # Usage: SearchDisplay
