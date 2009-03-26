@@ -526,6 +526,35 @@ sub Search
     return @match;
 }
 
+# Purpose: open a bzip/gzip/lzma/plain file and hand its uncompressed contents on
+# Usage: GetFile($filename);
+#sub GetFile
+#{
+#	if ( -e file.txt) 
+#	{
+#		# Plain, just hand it on.
+#		open($RFCFile, '<', $RFC);
+#	}
+#	elsif ( -e file.txt.bz2)
+#	{
+#		# Uncompress bz2, hand it on
+#	}
+#	elsif ( -e file.txt.gz)
+#	{
+#		# Uncompress gz, hand it on
+#	}
+#	elsif ( -e file.txt.lzma)
+#	{
+#		# Uncompress lzma, hand it on
+#		# TODO find a lzma decompress/compress function
+#	}
+#	else
+#	{
+#		# Oh dear, no file. Tell them so.
+#		RSInfo('Error', "We cannot open this file");
+#	}
+#}
+
 # Purpose: Display output of search
 # Usage: SearchDisplay
 sub SearchDisplay
