@@ -39,6 +39,8 @@ my $rootWindow;
 my $RFCSource = 'ftp://ftp.rfc-editor.org/in-notes/';
 my $RFCPrefix = 'rfc';
 my $RFCSuffix = '.txt';
+# For compression suffix
+my $RFCTail;
 # The path to the config file
 my $confFile = $ENV{HOME}.'/.rfcshowrc';
 my @Directories;
@@ -400,12 +402,23 @@ sub AskRFC
 	{
 		my $num = shift;
 		# this needs to be found in each dir of @ProgressDir
-		if(CheckRFC($num))
+		if(CheckRFC($num)) # stuffs values into $RFCFilename and $RFCTail
 		{
-			if (open($RFCFile, '<', $RFCFilename)) 
+			# FIXME: I need to call GetFile instead
+#			if (open($RFCFile, '<', $RFCFilename)) 
+#			{
+#				my $RFCText = read_file($RFCFile);
+#				DisplayText($RFCText);
+#			}
+			# FIXME: Something's fundamentally wrong with doing the same tests twice
+			my $RFCText = GetFile($RFCFilename);
+			if ($RFCText)
 			{
-				my $RFCText = read_file($RFCFile);
 				DisplayText($RFCText);
+			}
+			else
+			{
+				RSInfo('Error',"Error: rfc$num.txt was unable to be opened");
 			}
 		}
 		else
@@ -571,7 +584,8 @@ sub GetFile
 	elsif ( -e $filename.'.lzma')
 	{
 		# XXX: Might want to convert to a perl module once one becomes more
-		# 	widespread.
+		# 	widespread. 
+		# FIXME: Also, this fails when no lzma installed.
 		my($in,$out,$err);
 		open3($in, $out, $err,'unlzma','-s',$filename.'.lzma');
 		while(<$out>)
@@ -581,12 +595,6 @@ sub GetFile
 		close($in);
 		close($out);
 		close($err);
-	}
-	else
-	{
-		# Oh dear, no file. Tell them so.
-		RSInfo('Error', 'We cannot open this file');
-		return;
 	}
 	return $return;
 }
@@ -762,17 +770,8 @@ sub InitMain
 	{
 		$ENV{TERM} = 'xterm';
 	}
-	# TODO: too simple. Needs to look inside @PossibleEntries
-	foreach(@PossibleEntries)
-	{
-		my $try = $_."/";
-		if(-e $try.$RFCPrefix."-index".$RFCSuffix) 
-		{
-			# Only set if we've found it
-			$RFCIndex = $try.$RFCPrefix."-index".$RFCSuffix;
-			$Succeed = 1;
-		}
-	}
+	# Side effect is that this puts value into $RFCFilename if found
+	$Succeed = CheckRFC('-index');
 	if ($Succeed == 0) {
 		# TODO This should show a dialog box instead.
 		RSIntWarn("Cannot find $RFCIndex, please grab a copy of it from $RFCSource\n");
@@ -781,6 +780,7 @@ sub InitMain
 
 # Purpose: check if document exists in @Directories
 # Usage: CheckRFC($num);
+# FIXME: Doesn't check any compression suffixes
 sub CheckRFC
 {
 	my $Succeed = 0;
@@ -788,11 +788,37 @@ sub CheckRFC
 	foreach(@Directories)
 	{
 		my $try = $_."/";
+		# FIXME: Yes, this is all repeated. I'll fix it when I figure out how
 		if(-e $try.$RFCPrefix.$num.$RFCSuffix) 
 		{
 			# Only set if we've found it
 			$RFCFilename = $try.$RFCPrefix.$num.$RFCSuffix;
 			$Succeed = 1;
+			last; #Yep, we've got it.
+		}
+		elsif(-e $try.$RFCPrefix.$num.$RFCSuffix.'.bz2') 
+		{
+			# Only set if we've found it
+			$RFCFilename = $try.$RFCPrefix.$num.$RFCSuffix;
+			$RFCTail = '.bz2';
+			$Succeed = 1;
+			last; #Yep, we've got it.
+		}
+		elsif(-e $try.$RFCPrefix.$num.$RFCSuffix.'.gz') 
+		{
+			# Only set if we've found it
+			$RFCFilename = $try.$RFCPrefix.$num.$RFCSuffix;
+			$Succeed = 1;
+			$RFCTail = '.gz';
+			last; #Yep, we've got it.
+		}
+		elsif(-e $try.$RFCPrefix.$num.$RFCSuffix.'.lzma') 
+		{
+			# Only set if we've found it
+			$RFCFilename = $try.$RFCPrefix.$num.$RFCSuffix;
+			$Succeed = 1;
+			$RFCTail = '.lzma';
+			last; #Yep, we've got it.
 		}
 	}
 	return $Succeed;
@@ -867,16 +893,19 @@ sub CreateMainUI
 		-text 	 	 => 
 		" ^Q Quit  F10 Menu"
 	);
-	if(open($RFCFile, '<', $RFCIndex))
-	{
+#	if(open($RFCFile, '<', $RFCIndex))
 	# We're supposed to turn file into text.
-		my $RFCText = read_file($RFCFile);
+	my $RFCText = GetFile($RFCFilename);
+	# FIXME: Only call this if something's in $RFCText
+	if ($RFCText)
+	{
 		DisplayText($RFCText);
 	}
 	else
 	{
-		# Gotta warn user there's no Index file (in text form)
-		RSInfo('Error', "Cannot open $RFCIndex\n");
+		# Oh dear, no file. Tell them so.
+		RSInfo('Error', "We cannot open $RFCFilename\n");
+		return;
 	}
 	if(not $config{ignore_startup_dialog} eq 'true')
 	{
