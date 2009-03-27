@@ -585,7 +585,7 @@ sub GetFile
 	else
 	{
 		# Oh dear, no file. Tell them so.
-		RSInfo('Error', "We cannot open this file");
+		RSInfo('Error', 'We cannot open this file');
 		return;
 	}
 	return $return;
