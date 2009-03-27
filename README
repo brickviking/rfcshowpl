@@ -1,11 +1,28 @@
-The rfcshow program downloads, stores, searches and displays
-Requests For Comment (rfc) documents in text/pdf/ps/html, though I may
-focus purely on txt at the moment. I (brickviking) am providing the hosting
-and initial concepts, and some code, Zero_Dogg is providing most of the code,
-and lots of his experience.
+The rfcshow program searches and displays Requests For Comment (rfc)
+documents in text format, either as plain text files or compressed with
+any of bzip2, gzip or lzma.
+
+To come:
+* documents in pdf/ps/html formats.
+
+I (brickviking) am providing the hosting and initial concepts, and some
+code, Zero_Dogg is providing other code, and lots of his experience.
 
 At the moment, the instructions are really really simple:
-* Install Curses::UI and Curses perl modules.
-* make the rfcshow script executable.
+* Install the following perl modules.
+  + File::Slurp
+  + Curses::UI and Curses
+  + Compress::Zlib
+  + Compress::Bzip2
+* Install the lzma package (or compile/install it) - this program uses
+  the binary program called unlzma from the package.
+* Create a directory to store rfc documents in - several ideas
+  are:
+  + /usr/share/doc/rfc
+  + /usr/local/share/doc/rfc
+  + $HOME/rfcs
+  + $HOME/rfcshow
+* make the rfcshow script executable. (chmod +x rfcshow)
 * execute it.
+* Install it in a directory, if necessary.
 
