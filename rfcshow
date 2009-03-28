@@ -202,6 +202,7 @@ sub DisplayText
 		# Enable a vertical scrollbar. It only gets displayed if the text is
 		# too long.
 		-vscrollbar => true,
+		-title => "$RFCFilename$RFCTail",
 		# The text itself
 		-text => $text
 	);
@@ -397,35 +398,34 @@ sub STUB
 # Usage: AskRFC();
 sub AskRFC
 {
-	GetInput('Open RFC','Please enter the RFC ID you want to open', 
-	sub
+	GetInput('Open RFC','Please enter the RFC ID you want to open', \&OpenRFC);
+}
+
+# Purpose: Opens provided RFC
+# Usage: OpenRFC($rfc)
+sub OpenRFC
+{
+	my $id = shift;
+	# this needs to be found in each dir of @ProgressDir
+	if(CheckRFC($id)) # stuffs values into $RFCFilename and $RFCTail
 	{
-		my $num = shift;
-		# this needs to be found in each dir of @ProgressDir
-		if(CheckRFC($num)) # stuffs values into $RFCFilename and $RFCTail
+		# FIXME: Something's fundamentally wrong with doing the same tests
+		# twice
+
+		my $RFCText = GetFile($RFCFilename,$RFCTail);
+		if ($RFCText)
 		{
-			# FIXME: I need to call GetFile instead
-#			if (open($RFCFile, '<', $RFCFilename)) 
-#			{
-#				my $RFCText = read_file($RFCFile);
-#				DisplayText($RFCText);
-#			}
-			# FIXME: Something's fundamentally wrong with doing the same tests twice
-			my $RFCText = GetFile($RFCFilename);
-			if ($RFCText)
-			{
-				DisplayText($RFCText);
-			}
-			else
-			{
-				RSInfo('Error',"Error: rfc$num.txt was unable to be opened");
-			}
+			DisplayText($RFCText);
 		}
 		else
 		{
-			RSInfo('Error',"Error: rfc$num.txt was unable to be opened");
+			RSInfo('Error',"Error: rfc$id.txt was unable to be opened");
 		}
-	});
+	}
+	else
+	{
+		RSInfo('Error',"Error: rfc$id.txt was unable to be opened");
+	}
 }
 
 # Purpose: Exit the program
@@ -548,20 +548,24 @@ sub Search
 }
 
 # Purpose: open a bzip/gzip/lzma/plain file and hand its uncompressed contents on
-# Usage: GetFile($filename);
+# Usage: GetFile($filename,$tail);
 sub GetFile
 {
 	my $filename = shift;
+	my $tail = shift; # gotta check if next arg even HAS anything in it.
 	my $return;
+
 	# FIXME: We need more error handling
 	# FIXME: Should check for readability as well as existance
 
-	if ( -e $filename) 
+#	if ( -e $filename) 
+	if ( $tail eq '')
 	{
 		# Plain, just hand it on.
 		$return = read_file($filename);
 	}
-	elsif ( -e $filename.'.bz2')
+#	elsif ( -e $filename.'.bz2')
+	elsif ( $tail eq '.bz2')
 	{
 		# Uncompress bz2
 		my $file = bzopen($filename.'.bz2','r');
@@ -571,7 +575,8 @@ sub GetFile
 			$return .= $buffer;
 		}
 	}
-	elsif ( -e $filename.'.gz')
+#	elsif ( -e $filename.'.gz')
+	elsif ( $tail eq '.gz')
 	{
 		# Uncompress gz
 		my $file = gzopen($filename.'.gz','rb');
@@ -581,7 +586,8 @@ sub GetFile
 			$return .= $buffer;
 		}
 	}
-	elsif ( -e $filename.'.lzma')
+#	elsif ( -e $filename.'.lzma')
+	elsif ( $tail eq '.lzma')
 	{
 		# XXX: Might want to convert to a perl module once one becomes more
 		# 	widespread. 
@@ -773,14 +779,14 @@ sub InitMain
 	# Side effect is that this puts value into $RFCFilename if found
 	$Succeed = CheckRFC('-index');
 	if ($Succeed == 0) {
-		# TODO This should show a dialog box instead.
+		# TODO This should show a dialog box instead. Hopefully, we'll offer
+		#      to download one soon.
 		RSIntWarn("Cannot find $RFCIndex, please grab a copy of it from $RFCSource\n");
 	}
 }
 
 # Purpose: check if document exists in @Directories
 # Usage: CheckRFC($num);
-# FIXME: Doesn't check any compression suffixes
 sub CheckRFC
 {
 	my $Succeed = 0;
@@ -788,40 +794,34 @@ sub CheckRFC
 	foreach(@Directories)
 	{
 		my $try = $_."/";
+		foreach my $ext (qw(none bz2 gz lzma)) {
+			$RFCTail = $ext eq 'none' ? '' : '.'.$ext;
+			if ( -e $try.$RFCPrefix.$num.$RFCSuffix.$RFCTail)  
+			{
+				# Only set if we've found it
+				$RFCFilename = $try.$RFCPrefix.$num.$RFCSuffix;
+				$Succeed = 1;
+				last; #Yep, we've got it.
+			}
+		}
+		last if $Succeed;
 		# FIXME: Yes, this is all repeated. I'll fix it when I figure out how
-		if(-e $try.$RFCPrefix.$num.$RFCSuffix) 
-		{
-			# Only set if we've found it
-			$RFCFilename = $try.$RFCPrefix.$num.$RFCSuffix;
-			$Succeed = 1;
-			last; #Yep, we've got it.
-		}
-		elsif(-e $try.$RFCPrefix.$num.$RFCSuffix.'.bz2') 
-		{
-			# Only set if we've found it
-			$RFCFilename = $try.$RFCPrefix.$num.$RFCSuffix;
-			$RFCTail = '.bz2';
-			$Succeed = 1;
-			last; #Yep, we've got it.
-		}
-		elsif(-e $try.$RFCPrefix.$num.$RFCSuffix.'.gz') 
-		{
-			# Only set if we've found it
-			$RFCFilename = $try.$RFCPrefix.$num.$RFCSuffix;
-			$Succeed = 1;
-			$RFCTail = '.gz';
-			last; #Yep, we've got it.
-		}
-		elsif(-e $try.$RFCPrefix.$num.$RFCSuffix.'.lzma') 
-		{
-			# Only set if we've found it
-			$RFCFilename = $try.$RFCPrefix.$num.$RFCSuffix;
-			$Succeed = 1;
-			$RFCTail = '.lzma';
-			last; #Yep, we've got it.
-		}
 	}
 	return $Succeed;
+}
+
+# Purpose: frontend glue to open the RFC index.
+# Usage: OpenIndex
+sub OpenIndex
+{
+	OpenRFC('-index');
+}
+
+# Purpose: frontend glue to open the RFC Ref index.
+# Usage: OpenRef
+sub OpenRef
+{
+	OpenRFC('-ref');
 }
 
 # Purpose: Create the main UI for the user
@@ -833,6 +833,8 @@ sub CreateMainUI
 		{ -label => 'File', 
 			-submenu => [
 			{ -label => 'Open ^O', -value => \&AskRFC},
+			{ -label => 'Index ^I', -value => \&OpenIndex},
+			{ -label => 'Short Index ^R', -value => \&OpenRef},
 			{ -label => 'Exit ^Q', -value => \&ExitProg}
 			]
 		},
@@ -894,8 +896,9 @@ sub CreateMainUI
 		" ^Q Quit  F10 Menu"
 	);
 #	if(open($RFCFile, '<', $RFCIndex))
-	# We're supposed to turn file into text.
-	my $RFCText = GetFile($RFCFilename);
+	# We already checked the file was there inside InitMain(), that's why
+	# $RFCFilename and $RFCTail are defined. Weird errors if they're not.
+	my $RFCText = GetFile($RFCFilename,$RFCTail);
 	# FIXME: Only call this if something's in $RFCText
 	if ($RFCText)
 	{
@@ -914,6 +917,7 @@ sub CreateMainUI
 	# Keybindings
 	$rootWindow->set_binding(\&ExitProg, "\cQ","\cC");
 	$rootWindow->set_binding(\&AskRFC, "\cO");
+	$rootWindow->set_binding(\&OpenIndex, "\cI");
 	$rootWindow->set_binding(sub {shift()->getobj('menu')->focus}, "\cX", KEY_F(10));
 }
 
