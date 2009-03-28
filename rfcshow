@@ -780,7 +780,7 @@ sub InitMain
 	$Succeed = CheckRFC('-index');
 	if ($Succeed == 0) {
 		# TODO This should show a dialog box instead. Hopefully, we'll offer
-		#      to download one soon.
+		#      to download one soon. Unfortunately, Curses isn't running right now.
 		RSIntWarn("Cannot find $RFCIndex, please grab a copy of it from $RFCSource\n");
 	}
 }
@@ -884,6 +884,7 @@ sub CreateMainUI
 	);
 
 	# Help information at the bottom
+	# TODO: How do I change this at will? i.e. to provide a "Please wait"
 	$MainWidget->add(
 		'help', 'Label',
 		-y 	 	 => -2,
@@ -899,7 +900,6 @@ sub CreateMainUI
 	# We already checked the file was there inside InitMain(), that's why
 	# $RFCFilename and $RFCTail are defined. Weird errors if they're not.
 	my $RFCText = GetFile($RFCFilename,$RFCTail);
-	# FIXME: Only call this if something's in $RFCText
 	if ($RFCText)
 	{
 		DisplayText($RFCText);
@@ -918,6 +918,7 @@ sub CreateMainUI
 	$rootWindow->set_binding(\&ExitProg, "\cQ","\cC");
 	$rootWindow->set_binding(\&AskRFC, "\cO");
 	$rootWindow->set_binding(\&OpenIndex, "\cI");
+	$rootWindow->set_binding(\&OpenRef, "\cR");
 	$rootWindow->set_binding(sub {shift()->getobj('menu')->focus}, "\cX", KEY_F(10));
 }
 
