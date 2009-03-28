@@ -38,6 +38,7 @@ my $rootWindow;
 # Download parts
 my $RFCSource = 'ftp://ftp.rfc-editor.org/in-notes/';
 my $RFCPrefix = 'rfc';
+my $RFCNum = 0;
 my $RFCSuffix = '.txt';
 # For compression suffix
 my $RFCTail;
@@ -202,7 +203,7 @@ sub DisplayText
 		# Enable a vertical scrollbar. It only gets displayed if the text is
 		# too long.
 		-vscrollbar => true,
-		-title => "$RFCFilename$RFCTail",
+		-title => $RFCPrefix.$RFCNum.$RFCSuffix,
 		# The text itself
 		-text => $text
 	);
@@ -786,20 +787,20 @@ sub InitMain
 }
 
 # Purpose: check if document exists in @Directories
-# Usage: CheckRFC($num);
+# Usage: CheckRFC($RFCNum);
 sub CheckRFC
 {
 	my $Succeed = 0;
-	my $num = shift;
+	$RFCNum = shift;
 	foreach(@Directories)
 	{
 		my $try = $_."/";
 		foreach my $ext (qw(none bz2 gz lzma)) {
 			$RFCTail = $ext eq 'none' ? '' : '.'.$ext;
-			if ( -e $try.$RFCPrefix.$num.$RFCSuffix.$RFCTail)  
+			if ( -e $try.$RFCPrefix.$RFCNum.$RFCSuffix.$RFCTail)  
 			{
 				# Only set if we've found it
-				$RFCFilename = $try.$RFCPrefix.$num.$RFCSuffix;
+				$RFCFilename = $try.$RFCPrefix.$RFCNum.$RFCSuffix;
 				$Succeed = 1;
 				last; #Yep, we've got it.
 			}
