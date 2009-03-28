@@ -6,6 +6,7 @@ To come:
 * documents in pdf/ps/html formats.
 * download and compression of documents not already fetched.
 * update locally stored documents to match available documents.
+* support for bcp/fyi/std documents.
 
 I (brickviking) am providing the hosting and initial concepts, and some
 code, Zero_Dogg is providing other code, and lots of his experience.
