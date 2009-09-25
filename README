@@ -14,7 +14,7 @@ code, Zero_Dogg is providing other code, and lots of his experience.
 At the moment, the instructions are really really simple:
 * Install the following perl modules.
   + File::Slurp
-  + Curses::UI and Curses
+  + Gtk2
   + Compress::Zlib
   + Compress::Bzip2
 * Install the lzma package (or compile/install it) - this program uses
