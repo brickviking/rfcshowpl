@@ -20,20 +20,18 @@ use strict;
 use warnings;
 
 use LWP::UserAgent;
-use Curses::UI;
-use Curses;
+use Gtk2 '-init'; # TODO: Do the init elsewhere
 use constant { true => 1, false => 0 };
 use Getopt::Long;
 use Cwd qw(getcwd realpath);
 use File::Basename;
-use File::Slurp;
 use Compress::Zlib;
 use Compress::Bzip2;
 use IPC::Open3;
 
 # Our version number
 my $VERSION = '0.1 Alpha';
-# The root Curses window
+# The root window
 my $rootWindow;
 # Download parts
 my $RFCSource = 'ftp://ftp.rfc-editor.org/in-notes/';
@@ -62,12 +60,9 @@ my $LWP_ProgressMode = 0;
 
 # Config with default values
 my %config = (
-	col_fg => 'white',
-	col_bg => 'blue',
 	source_add => 'ftp://ftp.rfc-editor.org/in-notes/',
 	file_prefix => 'rfc',
 	file_suffix => 'txt',
-	ignore_startup_dialog => 'false',
 );
 
 # Purpose: Write the RFCShow rc file
@@ -76,8 +71,6 @@ sub WriteRFCShowRC
 {
 	my %configInfo = (
 		HEADER => 'RFCShow RC file',
-		col_fg => 'The foreground colour (default: white)',
-		col_bg => 'The background colour (default: blue)',
 		source_add => 'The RFC source address (default: ftp://ftp.rfc-editor.org/in-notes/)',
 		file_prefix => 'The prefix of the files on the server (default: rfc)',
 		file_suffix => 'The suffix of the files on the server (default: .txt)',
@@ -94,29 +87,19 @@ sub LoadRFCShowRC
 	my $bool = '^(true|false)$';
 
 	my %OptionRegexHash = (
-		col_fg => $colours,
-		col_bg => $colours,
 		source_add => '.+',
 		file_prefix => '.*',
 		file_suffix => '.*',
 		ignore_startup_dialog => $bool,
 	);
 	LoadConfigFile($confFile,\%config,\%OptionRegexHash,true);
-	if ($config{col_bg} eq $config{col_fg})
-	{
-		RSIntWarn("col_bg equals col_fg. You won't be able to see anything! Falling back to defaults");
-		$config{col_bg} = 'blue';
-		$config{col_fg} = 'white';
-	}
 }
 
 # Purpose: Output a internal warning
 # Usage: RSIntWarn(TEXT);
 sub RSIntWarn
 {
-	$rootWindow->leave_curses() if $rootWindow;
 	warn("RFCShow: $_[0]\n");
-	$rootWindow->reset_curses() if $rootWindow;
 }
 
 # Purpose: die wrapper that properly outputs to STDERR, if not the message gets hidden
@@ -133,17 +116,7 @@ sub RSInfo
 {
 	my $title = shift;
 	my $text = shift;
-	$rootWindow->dialog(
-		-title     => $title,
-		-buttons   => ['ok'],
-		-message => $text,
-		-tbg => $config{col_fg},
-		-tfg => $config{col_bg},
-		-bg => $config{col_bg},
-		-fg => $config{col_fg},
-		-bbg => $config{col_bg},
-		-bfg => $config{col_fg},
-	);
+	STUB();
 }
 
 # Purpose: Display an yes/no box
@@ -153,25 +126,7 @@ sub RSQuestion
 {
 	my $title = $_[0] ? $_[0] : 'Untitled';
 	my $text = $_[1] ? $_[1] : 'Text';
-	my $ret = $rootWindow->dialog(
-		-title     => $title,
-		-buttons   => ['Yes','No'],
-		-message => $text,
-		-tbg => $config{col_fg},
-		-tfg => $config{col_bg},
-		-bg => $config{col_bg},
-		-fg => $config{col_fg},
-		-bbg => $config{col_bg},
-		-bfg => $config{col_fg},
-	);
-	if ($ret)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	STUB();
 }
 
 # Purpose: Display a full-screen(ish) scrollable text window
@@ -179,39 +134,7 @@ sub RSQuestion
 sub DisplayText
 {
 	my $text = shift;
-
-	# If we already have a window showing, destroy the widgets
-	if ($TextWindowShowing)
-	{
-		$rootWindow->delete('tvwidget');
-		$rootWindow->delete('tvwin');
-	}
-
-	my $win = $rootWindow->add('tvwin','Window',
-		# Padding on the top so the menu line is shown.
-		-padtop => 1,
-		# Padding on the bottom so the help string shows
-		-padbottom => 2
-	);
-
-	my $textViewer = $win->add('tvwidget', 'TextViewer',
-		# Enable the border, without this it gets hard to distinguish the
-		# text being displayed from the app itself.
-		-border => true,
-		# Enable wrapping in case the terminal is too small for the text
-		-wrapping => true,
-		# Enable a vertical scrollbar. It only gets displayed if the text is
-		# too long.
-		-vscrollbar => true,
-		-title => $RFCPrefix.$RFCNum.$RFCSuffix,
-		# The text itself
-		-text => $text
-	);
-	# Focus it
-	$textViewer->focus();
-	# And remember that we need to delete it the next time DisplayText() is
-	# called.
-	$TextWindowShowing = true;
+	STUB()
 }
 
 # Purpose: Create a utility window
@@ -220,35 +143,7 @@ sub DisplayText
 #	If called in array context, will return (win, ID) instead of just win.
 sub getNewUtilWin
 {
-	my $title = $_[0] ? $_[0] : 'Untitled';
-	my $parent = $_[1] ? $_[1] : $rootWindow;
-	my $width = $_[2] ? $_[2] : 70;
-	my $height = $_[3] ? $_[3] : 15;
-
-	my $ID = int(rand(1000000)).time().$width.$height;
-	my $win = $rootWindow->add($ID,
-		'Window',
-		'-title' => $title,
-		'-height' => $height,
-		'-width' => $width,
-		'-border' => 1,
-		'-centered' => 1,
-		-tbg => $config{col_fg},
-		-tfg => $config{col_bg},
-		-bg => $config{col_bg},
-		-fg => $config{col_fg},
-		-bbg => $config{col_bg},
-		-bfg => $config{col_fg},
-		'-parent' => $parent,
-	);
-	if(wantarray())
-	{
-		return($win,$ID);
-	}
-	else
-	{
-		return($win);
-	}
+	STUB();
 }
 
 # Purpose: Create a prompt dialog, return contents
@@ -275,48 +170,7 @@ sub GetInput
 	{
 		RSIntWarn("text to GetInput() contained newlines. This might spell trouble.");
 	}
-	my ($win,$ID) = getNewUtilWin($title,undef,$width,$height);
-	my $label = $win->add($ID.'label',
-		'Label',
-		-width => -1,
-		'-text' => $text,
-		'-y' => 1,
-		-bg => $config{col_bg},
-		-fg => $config{col_fg},
-	);
-	my $textentry = $win->add($ID.'entry',
-		'TextEntry',
-		-sbborder => 1,
-		'-y' => 2,
-	);
-	my $buttons = $win->add($ID.'button',
-		'Buttonbox',
-		-buttons   => [
-		{
-			-label => '< Accept >',
-			-value => 1,
-			-shortcut => 1,
-			-onpress => sub {
-				my $te = $textentry->get();
-				$rootWindow->delete($ID);
-				$callback->($te);
-			},
-		},
-		{
-			-label => '< Cancel >',
-			-value => 1,
-			-shortcut => 2,
-			-onpress => sub {
-				$rootWindow->delete($ID);
-			},
-		},
-		],
-		'-y' => 3,
-		'-centered' => 1,
-	);
-
-
-	$textentry->focus();
+	STUB();
 }
 
 # Purpose: Write a configuration file
@@ -610,27 +464,7 @@ sub GetFile
 # Usage: SearchDisplay
 sub SearchDisplay
 {
-	#####
-	# Gobble text from the array into one var so that the dialog box can
-	# render it.
-	# Yes, I know I could combine these two lines, but I am t3h n00b
-	# and would rather have code _I_ understand.
-	my $title = "Results";
-	my $SearchText = join " ", @_;
-	# If we have no results, we should say so.
-	my $Text = $SearchText ? $SearchText : 'No results';
-	# I want (eventually) to make this into a picklist
-	$rootWindow->dialog(
-		-title     => $title,
-		-buttons   => ['ok'],
-		-message => $Text,
-		-tbg => $config{col_fg},
-		-tfg => $config{col_bg},
-		-bg => $config{col_bg},
-		-fg => $config{col_fg},
-		-bbg => $config{col_bg},
-		-bfg => $config{col_fg}
-	);
+	STUB();
 }
 
 # Purpose: Download files
@@ -780,8 +614,7 @@ sub InitMain
 	# Side effect is that this puts value into $RFCFilename if found
 	$Succeed = CheckRFC('-index');
 	if ($Succeed == 0) {
-		# TODO This should show a dialog box instead. Hopefully, we'll offer
-		#      to download one soon. Unfortunately, Curses isn't running right now.
+		# TODO This should show a dialog box instead.
 		RSIntWarn("Cannot find $RFCIndex, please grab a copy of it from $RFCSource\n");
 	}
 }
@@ -829,98 +662,7 @@ sub OpenRef
 # Usage: CreateMainUI();
 sub CreateMainUI
 {
-	# Define the menu
-	my @Menu = (
-		{ -label => 'File', 
-			-submenu => [
-			{ -label => 'Open ^O', -value => \&AskRFC},
-			{ -label => 'Index ^I', -value => \&OpenIndex},
-			{ -label => 'Short Index ^R', -value => \&OpenRef},
-			{ -label => 'Exit ^Q', -value => \&ExitProg}
-			]
-		},
-		{ -label => 'Edit',
-			-submenu => [
-			{ -label => 'Search', -value => sub { SearchDialog();}},
-			{ -label => 'Repeat search', -value => sub { SearchDialog('REPEAT');}},
-			{ -label => 'Search in Index', -value => sub { SearchDialog('INDEX');}},
-			{ -label => 'Search All', -value => sub { SearchDialog('ALL');}},
-			],
-		},
-		{ -label => 'Grab',
-			-submenu => [
-			{ -label => 'All Latest', -value => sub { DownloadFiles('LATEST');}},
-			{ -label => 'One', -value => sub { DownloadFiles('ONE');}},
-			{ -label => 'Index', -value => sub { DownloadFiles('INDEX');}},
-			],
-		},
-		{ -label => 'Help', 
-			-submenu => [
-			{ -label => 'Contents', -value => \&HelpMe},
-			{ -label => 'About', -value => \&AboutDialog},
-			]
-		} 
-	);
-
-	# Create root widget
-	$rootWindow = new Curses::UI ( 
-		-clear_on_exit => 0,
-		-color_support => 1
-	);
-
-	# Add the menu
-	my $MenuWidget = $rootWindow->add(
-		'menu','Menubar', 
-		-fg   => $config{col_fg},
-		-bg   => $config{col_bg},
-		-menu => \@Menu,
-	);
-
-	# Create the main widget
-	my $MainWidget = $rootWindow->add(
-		'screen', 'Window',
-		-padtop      => 1,
-		-border		 => 0,
-		-ipad		 => 0,
-	);
-
-	# Help information at the bottom
-	# TODO: How do I change this at will? i.e. to provide a "Please wait"
-	$MainWidget->add(
-		'help', 'Label',
-		-y 	 	 => -2,
-		-width		 => -1,
-		-reverse 	 => 1,
-		-paddingspaces   => 1,
-		-fg              => $config{col_bg},
-		-bg              => $config{col_fg},
-		-text 	 	 => 
-		" ^Q Quit  F10 Menu"
-	);
-#	if(open($RFCFile, '<', $RFCIndex))
-	# We already checked the file was there inside InitMain(), that's why
-	# $RFCFilename and $RFCTail are defined. Weird errors if they're not.
-	my $RFCText = GetFile($RFCFilename,$RFCTail);
-	if ($RFCText)
-	{
-		DisplayText($RFCText);
-	}
-	else
-	{
-		# Oh dear, no file. Tell them so.
-		RSInfo('Error', "We cannot open $RFCFilename\n");
-		return;
-	}
-	if(not $config{ignore_startup_dialog} eq 'true')
-	{
-		AboutDialog();
-	}
-	# Keybindings
-	$rootWindow->set_binding(\&ExitProg, "\cQ","\cC");
-	$rootWindow->set_binding(\&AskRFC, "\cO");
-	$rootWindow->set_binding(\&OpenIndex, "\cI");
-	$rootWindow->set_binding(\&OpenRef, "\cR");
-	$rootWindow->set_binding(sub {shift()->getobj('menu')->focus}, "\cX", KEY_F(10));
+	STUB();
 }
 
 # Purpose: The main app loop
@@ -929,12 +671,8 @@ sub Main_Loop
 {
 	# Generate our private LWP subclass
 	eval('package RFCShow_LWP_Wrapper; our @ISA = qw(LWP::UserAgent); sub progress { shift; return main::LWPProgress(@_)};');
-	# We eval the Main_Loop so that die()s gets properly displayed to STDERR.
-	eval
-	{
-		$rootWindow->mainloop;
-	};
-	RSIntDie($@) if $@;
+
+	STUB();
 }
 
 GetOptions (
