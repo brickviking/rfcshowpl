@@ -249,6 +249,11 @@ sub STUB
 	RSIntWarn($msg);
 }
 
+sub STUBMenu
+{
+	RSIntWarn('Clicked menu item is stubbed');
+}
+
 # Purpose: Prompt for an RFC to open
 # Usage: AskRFC();
 sub AskRFC
@@ -662,7 +667,58 @@ sub OpenRef
 # Usage: CreateMainUI();
 sub CreateMainUI
 {
-	STUB();
+	my $win = Gtk2::Window->new();
+	$win->set_title('RFCShow');
+	$win->set_default_size(500,350);
+
+	$win->signal_connect('destroy' => \&ExitProg);
+	$win->signal_connect('delete-event' => \&ExitProg);
+
+	my $vbox = Gtk2::VBox->new();
+	$win->add($vbox);
+
+	# These item names are straight from the spec and probably
+	# needs reworking so that they are actually understandable.
+	my @MenuItems = (
+		[ '/File',undef,undef,0,'<Branch>' ],
+		[ '/File/Open','',\&OpenRFC, 1, '<StockItem>',  'gtk-open'],
+		[ '/File/Exit','',\&ExitProg,3, '<StockItem>',  'gtk-quit' ],
+		[ '/Edit',undef,undef,0,'<Branch>'],
+		[ '/Edit/Search','',\&STUBMenu,1, ],
+		[ '/Edit/Repeat','',\&STUBMenu,1, ],
+		[ '/Edit/Search index','',\&STUBMenu,1, ],
+		[ '/Edit/Search all','',\&STUBMenu,1, ],
+		[ '/Grab',undef,undef,0,'<Branch>'],
+		[ '/Grab/Latest','',\&STUBMenu,1, ],
+		[ '/Grab/Single','',\&STUBMenu,1, ],
+		[ '/Grab/Index','',\&STUBMenu,1, ],
+		[ '/Grab/Bunch','',\&STUBMenu,1, ],
+		[ '/Help',undef,undef,0,'<Branch>'],
+		[ '/Help/Contents','',\&STUBMenu,1, ],
+		[ '/Help/About','',\&STUBMenu,1, ],
+	);
+	my $AccelGroup = Gtk2::AccelGroup->new;
+	$win->add_accel_group($AccelGroup);
+	# The item factory (menubar) itself
+	my $Menu_ItemFactory = Gtk2::ItemFactory->new('Gtk2::MenuBar', '<main>', $AccelGroup);
+	$Menu_ItemFactory->create_items (undef, @MenuItems);
+
+	$vbox->pack_start($Menu_ItemFactory->get_widget('<main>'), 0, 0, 0);
+
+	my $textView = Gtk2::TextView->new();
+	my $textBuf = Gtk2::TextBuffer->new();
+	$textBuf->set_text('(text)');
+	$textView->set_buffer($textBuf);
+	$textView->set_editable(0);
+	$textView->set_wrap_mode('word');
+	$textView->set_cursor_visible(0);
+	$vbox->pack_start($textView,1,1,0);
+
+	my $sbar = Gtk2::Statusbar->new();
+	$sbar->push(1,'Ready');
+	$vbox->pack_end($sbar,0,0,0);
+
+	$win->show_all();
 }
 
 # Purpose: The main app loop
@@ -672,7 +728,7 @@ sub Main_Loop
 	# Generate our private LWP subclass
 	eval('package RFCShow_LWP_Wrapper; our @ISA = qw(LWP::UserAgent); sub progress { shift; return main::LWPProgress(@_)};');
 
-	STUB();
+	Gtk2->main();
 }
 
 GetOptions (
