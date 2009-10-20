@@ -47,6 +47,10 @@ my $UserAgent = 'rfcshow '.$VERSION.' (LWP)';
 my $RFCIndex = $RFCPrefix.'-index'.$RFCSuffix;
 my $RFCFile;
 my $RFCFilename;
+
+my $win; # Global var to hold the window
+my $textBuf;
+my $textView; # both needed to show text
 # True if the text window has already been displayed (meaning we need
 # 	to destroy it before showing another one)
 my $TextWindowShowing;
@@ -134,6 +138,10 @@ sub RSQuestion
 sub DisplayText
 {
 	my $text = shift;
+	# I guess I should be setting scrollbars on this, there's no way that
+	# I can display a window that's 359,200 pixels high without something crashing.
+#	$textBuf->set_text($text);
+	$textBuf->set_text('I should be showing an index here');
 	STUB()
 }
 
@@ -263,6 +271,7 @@ sub AskRFC
 
 # Purpose: Opens provided RFC
 # Usage: OpenRFC($rfc)
+# ERR: Whoops. We never GET a $rfc - should we be prompting for one?
 sub OpenRFC
 {
 	my $id = shift;
@@ -669,7 +678,7 @@ sub CreateMainUI
 {
 	my $win = Gtk2::Window->new();
 	$win->set_title('RFCShow');
-	$win->set_default_size(500,350);
+	$win->set_default_size(800,650);
 
 	$win->signal_connect('destroy' => \&ExitProg);
 	$win->signal_connect('delete-event' => \&ExitProg);
@@ -682,6 +691,7 @@ sub CreateMainUI
 	my @MenuItems = (
 		[ '/File',undef,undef,0,'<Branch>' ],
 		[ '/File/Open','',\&OpenRFC, 1, '<StockItem>',  'gtk-open'],
+		[ '/File/Index','',\&OpenIndex, 2, '<StockItem>',  'gtk-open'],
 		[ '/File/Exit','',\&ExitProg,3, '<StockItem>',  'gtk-quit' ],
 		[ '/Edit',undef,undef,0,'<Branch>'],
 		[ '/Edit/Search','',\&STUBMenu,1, ],
@@ -705,8 +715,10 @@ sub CreateMainUI
 
 	$vbox->pack_start($Menu_ItemFactory->get_widget('<main>'), 0, 0, 0);
 
-	my $textView = Gtk2::TextView->new();
-	my $textBuf = Gtk2::TextBuffer->new();
+#	my $textView = Gtk2::TextView->new();
+#	my $textBuf = Gtk2::TextBuffer->new();
+	$textView = Gtk2::TextView->new();
+	$textBuf = Gtk2::TextBuffer->new();
 	$textBuf->set_text('(text)');
 	$textView->set_buffer($textBuf);
 	$textView->set_editable(0);
