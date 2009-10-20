@@ -718,7 +718,10 @@ sub CreateMainUI
 	$textView = Gtk2::TextView->new();
 	$textBuf = Gtk2::TextBuffer->new();
 	$textScrollable = Gtk2::ScrolledWindow->new();
+	my $horizPolicyScroll = 'automatic';
+	my $vertPolicyScroll = 'automatic';
 	$textScrollable->add($textView);
+	$textScrollable->set_policy($horizPolicyScroll, $vertPolicyScroll);
 	$textBuf->set_text('(text)');
 	$textView->set_buffer($textBuf);
 	$textView->set_editable(0);
