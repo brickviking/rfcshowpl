@@ -50,6 +50,7 @@ my $RFCFilename;
 
 my $win; # Global var to hold the window
 my $textBuf;
+my $textScrollable;
 my $textView; # both needed to show text
 # True if the text window has already been displayed (meaning we need
 # 	to destroy it before showing another one)
@@ -715,10 +716,9 @@ sub CreateMainUI
 
 	$vbox->pack_start($Menu_ItemFactory->get_widget('<main>'), 0, 0, 0);
 
-#	my $textView = Gtk2::TextView->new();
-#	my $textBuf = Gtk2::TextBuffer->new();
 	$textView = Gtk2::TextView->new();
 	$textBuf = Gtk2::TextBuffer->new();
+	$textScrollable = Gtk2::ScrolledWindow->new();
 	$textBuf->set_text('(text)');
 	$textView->set_buffer($textBuf);
 	$textView->set_editable(0);
