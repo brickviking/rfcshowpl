@@ -141,9 +141,8 @@ sub DisplayText
 	my $text = shift;
 	# I guess I should be setting scrollbars on this, there's no way that
 	# I can display a window that's 359,200 pixels high without something crashing.
-#	$textBuf->set_text($text);
-	$textBuf->set_text('I should be showing an index here');
-	STUB()
+	$textBuf->set_text($text);
+#	STUB()
 }
 
 # Purpose: Create a utility window
@@ -719,12 +718,13 @@ sub CreateMainUI
 	$textView = Gtk2::TextView->new();
 	$textBuf = Gtk2::TextBuffer->new();
 	$textScrollable = Gtk2::ScrolledWindow->new();
+	$textScrollable->add($textView);
 	$textBuf->set_text('(text)');
 	$textView->set_buffer($textBuf);
 	$textView->set_editable(0);
 	$textView->set_wrap_mode('word');
 	$textView->set_cursor_visible(0);
-	$vbox->pack_start($textView,1,1,0);
+	$vbox->pack_start($textScrollable,1,1,0);
 
 	my $sbar = Gtk2::Statusbar->new();
 	$sbar->push(1,'Ready');
