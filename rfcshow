@@ -489,6 +489,52 @@ sub DownloadFiles
 }
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# GUI helpers
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Purpose: Prompt the user for an integer
+# Usage: $int = getIntPrompt(LABEL,DEFAULT = 1,MAX = 9999);
+# 	Returns undef on 'cancel'.
+# 	Returns an integer otherwise.
+#
+# 	LABEL is used as the GUI label.
+#	DEFAULT is the default number in the dialog, defaults to 1 if not supplied
+# 	MAX is the maximum number in the dialog, defaults to 9999
+sub getIntPrompt
+{
+	my $label = shift;
+	my $default = @_ ? shift : 1;
+	my $max = @_ ? shift : 9999;
+	my $dialog = Gtk2::Dialog->new ('', $win, 'modal',
+		'gtk-cancel' => 'cancel',
+		'gtk-ok'      => 'ok');
+	my $hbox = Gtk2::HBox->new();
+	$dialog->get_content_area()->add($hbox);
+	$dialog->set_default_response ('ok');
+
+	my $gtk2label = Gtk2::Label->new($label);
+	$gtk2label->show();
+	$hbox->pack_start($gtk2label,0,0,0);
+
+	my $spinner = Gtk2::SpinButton->new_with_range(0,$max,1);
+	$spinner->set_value($default);
+	$spinner->set_digits(0);
+	$hbox->pack_end($spinner,0,0,0);
+
+	$hbox->show();
+	$spinner->show();
+
+	my $response = $dialog->run;
+	my $return;
+	if ($response eq 'ok')
+	{
+		$return = $spinner->get_value;
+	}
+	$dialog->destroy;
+	return $return;
+}
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Download helpers
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
