@@ -266,7 +266,10 @@ sub STUBMenu
 # Usage: AskRFC();
 sub AskRFC
 {
-	GetInput('Open RFC','Please enter the RFC ID you want to open', \&OpenRFC);
+#	GetInput('Open RFC','Please enter the RFC ID you want to open', \&OpenRFC);
+	# BIG FAT WARNING - the value MAXVAL changes.
+	my $rfc = getIntPrompt('Please enter the RFC ID to open',0,5900);
+	OpenRFC($rfc);
 }
 
 # Purpose: Opens provided RFC
@@ -736,7 +739,7 @@ sub CreateMainUI
 	# needs reworking so that they are actually understandable.
 	my @MenuItems = (
 		[ '/File',undef,undef,0,'<Branch>' ],
-		[ '/File/Open','',\&OpenRFC, 1, '<StockItem>',  'gtk-open'],
+		[ '/File/Open','',\&AskRFC, 1, '<StockItem>',  'gtk-open'],
 		[ '/File/Index','',\&OpenIndex, 2, '<StockItem>',  'gtk-open'],
 		[ '/File/Exit','',\&ExitProg,3, '<StockItem>',  'gtk-quit' ],
 		[ '/Edit',undef,undef,0,'<Branch>'],
