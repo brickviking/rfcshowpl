@@ -4,3 +4,6 @@ clean:
 # Verify syntax
 test:
 	@perl -c rfcshow
+
+tags:
+	@ctags-exuberant rfcshow
